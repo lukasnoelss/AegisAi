@@ -18,9 +18,13 @@ except json.JSONDecodeError:
 
 sensitive_info = data["sensitive_info"]
 desensitized = data["desensitized_prompt"]
+
+# First, fix escaped underscores in placeholders that LLMs often produce
+# e.g., [BANK\_ACCOUNT\_NUMBER\_5] -> [BANK_ACCOUNT_NUMBER_5]
+reconstructed = re.sub(r'\[([A-Z0-9_\\]+)\]', lambda m: '[' + m.group(1).replace('\\', '') + ']', desensitized)
+
 # Sort by key length descending so longer placeholders (e.g. STREET_ADDRESS)
 # are restored before shorter overlapping ones (e.g. ADDRESS).
-reconstructed = desensitized
 for key, value in sorted(sensitive_info.items(), key=lambda x: len(x[0]), reverse=True):
     placeholder = f"[{key}]"
     reconstructed = reconstructed.replace(placeholder, value)

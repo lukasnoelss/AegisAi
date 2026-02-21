@@ -84,13 +84,21 @@ const Index = () => {
     setIsTyping(true);
 
     try {
-      // Prepare history
-      const history = messages
+      // Prepare history — Gemini requires it to start with 'user' role
+      let history = messages
         .filter(msg => msg.content !== content)
+        .filter(msg => !msg.content.startsWith("Sorry, I encountered an error"))
+        .filter(msg => !msg.content.startsWith("Privacy pipeline error"))
+        .filter(msg => !msg.content.startsWith("I'm sorry, I'm having trouble"))
         .map(msg => ({
           role: msg.role === "user" ? "user" : "model",
           parts: [{ text: msg.content }]
         }));
+      
+      // Ensure history starts with a 'user' message (Gemini requirement)
+      while (history.length > 0 && history[0].role !== "user") {
+        history.shift();
+      }
 
       let aiResponse: string;
 
