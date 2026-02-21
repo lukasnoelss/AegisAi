@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { motion } from "framer-motion";
-import { User, Sparkles } from "lucide-react";
+import { User, Shield } from "lucide-react";
 import type { Message } from "@/types/chat";
 import PrivacyDebugPanel, { type PipelineStep } from "./PrivacyDebugPanel";
 
@@ -28,12 +28,12 @@ const ChatMessage = ({ message, pipelineSteps }: ChatMessageProps) => {
           {isUser ? (
             <User className="h-4 w-4 text-foreground" />
           ) : (
-            <Sparkles className="h-4 w-4 text-primary" />
+            <Shield className="h-4 w-4 text-primary" />
           )}
         </div>
         <div className="min-w-0 flex-1">
           <p className="mb-1 text-sm font-medium text-foreground">
-            {isUser ? "You" : "Chatty"}
+            {isUser ? "You" : "Aegis"}
           </p>
           <div className="prose prose-invert prose-sm max-w-none text-secondary-foreground">
             <ReactMarkdown
