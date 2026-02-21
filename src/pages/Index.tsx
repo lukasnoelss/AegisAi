@@ -30,8 +30,17 @@ const Index = () => {
     createConversation,
     sendMessage: saveMessage,
     deleteConversation: removeConversation,
+    deleteAllConversations,
     updateConversationModel,
   } = useChat(activeId, user?.uid);
+
+  useEffect(() => {
+    console.log("Index: User state changed:", user?.uid);
+  }, [user]);
+
+  useEffect(() => {
+    console.log("Index: Conversations updated, count:", conversations.length);
+  }, [conversations]);
 
   const activeConversation = conversations.find((c) => c.id === activeId);
   const currentModel = activeConversation?.model || selectedModel;
@@ -96,6 +105,13 @@ const Index = () => {
     if (activeId === id) setActiveId(null);
   };
 
+  const handleDeleteAll = async () => {
+    if (window.confirm("Are you sure you want to delete all conversations?")) {
+      await deleteAllConversations();
+      setActiveId(null);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar
@@ -107,6 +123,7 @@ const Index = () => {
           setSidebarOpen(false);
         }}
         onDelete={handleDeleteConversation}
+        onDeleteAll={handleDeleteAll}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         user={user}
@@ -126,7 +143,7 @@ const Index = () => {
             
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent focus:outline-none">
-                {currentModel === "gemini" ? "Gemini 1.5 Flash" : "Claude 3.5 Sonnet"}
+                {currentModel === "gemini" ? "Gemini 1.5 Flash-8B" : "Claude 3.5 Sonnet"}
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[200px] bg-popover border-border">
@@ -135,8 +152,8 @@ const Index = () => {
                   className="flex items-center justify-between py-2 cursor-pointer"
                 >
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium">Gemini 1.5 Flash</span>
-                    <span className="text-xs text-muted-foreground italic">Fast and capable</span>
+                    <span className="text-sm font-medium">Gemini 1.5 Flash-8B</span>
+                    <span className="text-xs text-muted-foreground italic">Ultra-fast and efficient</span>
                   </div>
                   {currentModel === "gemini" && <Check className="h-4 w-4 text-primary" />}
                 </DropdownMenuItem>

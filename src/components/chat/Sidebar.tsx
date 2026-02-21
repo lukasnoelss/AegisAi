@@ -9,6 +9,7 @@ interface SidebarProps {
   onSelect: (id: string) => void;
   onNew: () => void;
   onDelete: (id: string) => void;
+  onDeleteAll: () => void;
   open: boolean;
   onClose: () => void;
   user: User | null;
@@ -21,6 +22,7 @@ const Sidebar = ({
   onSelect,
   onNew,
   onDelete,
+  onDeleteAll,
   open,
   onClose,
   user,
@@ -43,14 +45,24 @@ const Sidebar = ({
         className="fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col bg-sidebar-bg border-r border-sidebar-border md:relative md:z-auto md:translate-x-0"
         style={{ x: undefined }}
       >
-        <div className="flex items-center justify-between p-3">
+        <div className="flex flex-col gap-1 p-3">
           <button
             onClick={onNew}
-            className="flex flex-1 items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-sidebar-fg transition-colors hover:bg-sidebar-hover"
+            className="flex w-full items-center gap-2 rounded-lg bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
           >
             <Plus className="h-4 w-4" />
             New chat
           </button>
+          
+          {conversations.length > 0 && (
+            <button
+              onClick={onDeleteAll}
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete all chats
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 scrollbar-thin">

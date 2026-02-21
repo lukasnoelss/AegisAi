@@ -13,8 +13,8 @@ export const getGeminiResponse = async (prompt: string, history: { role: string;
     console.log("Calling Gemini API with prompt:", prompt);
     console.log("History length:", history.length);
     
-    // Using 'gemini-flash-latest' as confirmed by the model list
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    // Using 'gemini-flash-lite-latest' (1.5 Flash-8B) for maximum speed
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
     
     // Create a chat instance with the provided history
     const chat = model.startChat({
