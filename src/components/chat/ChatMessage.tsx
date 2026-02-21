@@ -31,7 +31,7 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
         </div>
         <div className="min-w-0 flex-1">
           <p className="mb-1 text-sm font-medium text-foreground">
-            {isUser ? "You" : "ChatGPT"}
+            {isUser ? "You" : "Chatty"}
           </p>
           <div className="prose prose-invert prose-sm max-w-none text-secondary-foreground">
             <ReactMarkdown

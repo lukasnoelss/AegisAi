@@ -5,7 +5,7 @@ import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
-import { getMockResponse } from "@/lib/mockResponses";
+import { getGeminiResponse } from "@/lib/gemini";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -24,8 +24,6 @@ const Index = () => {
     deleteConversation: removeConversation,
   } = useChat(activeId, user?.uid);
 
-  const activeConversation = conversations.find((c) => c.id === activeId);
-
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
@@ -42,18 +40,31 @@ const Index = () => {
       setActiveId(currentId);
     }
 
-    // Save user message
+    // Save user message to Firestore
     await saveMessage(currentId, content, "user");
 
     setIsTyping(true);
 
-    // Simulate AI response delay
-    await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1500));
+    try {
+      // Prepare history for Gemini - exclude the message we just sent if it's already in the messages array
+      const history = messages
+        .filter(msg => msg.content !== content)
+        .map(msg => ({
+          role: msg.role === "user" ? "user" : "model",
+          parts: [{ text: msg.content }]
+        }));
 
-    // Save AI message
-    await saveMessage(currentId, getMockResponse(), "assistant");
-    
-    setIsTyping(false);
+      // Get real AI response
+      const aiResponse = await getGeminiResponse(content, history);
+
+      // Save AI message to Firestore
+      await saveMessage(currentId, aiResponse, "assistant");
+    } catch (error) {
+      console.error("AI response error:", error);
+      await saveMessage(currentId, "I'm sorry, I'm having trouble connecting right now.", "assistant");
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleDeleteConversation = async (id: string) => {
