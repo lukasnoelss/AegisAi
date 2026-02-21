@@ -30,9 +30,9 @@ const Index = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<"gemini" | "claude">("gemini");
-  const [privacyEnabled, setPrivacyEnabled] = useState(false);
+  const [privacyEnabled] = useState(true); // Always-on privacy
   const [privacyStatus, setPrivacyStatus] = useState<string>("");
-  const [pipelineDebug, setPipelineDebug] = useState<Record<string, PipelineStep[]>>({});
+  const [sensitiveCount, setSensitiveCount] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -113,6 +113,7 @@ const Index = () => {
         // Step 2: Deembed — strip PII
         setPrivacyStatus("🛡️ Stripping sensitive info (local Ollama)...");
         const { sensitive_info, desensitized_prompt } = await deembed(content);
+        const itemCount = Object.keys(sensitive_info).length;
 
         steps.push({ label: "Desensitized (sent to AI)", content: desensitized_prompt, type: "desensitized" });
         steps.push({
@@ -138,16 +139,12 @@ const Index = () => {
 
         steps.push({ label: "Reconstructed (shown to you)", content: aiResponse, type: "reconstructed" });
 
-        // Save AI message to Firestore
-        await saveMessage(currentId, aiResponse, "assistant");
-
-        // Store pipeline debug data
-        setPipelineDebug(prev => ({
-          ...prev,
-          [`${currentId}_latest`]: steps
-        }));
+        // Save AI message to Firestore with pipeline steps
+        await saveMessage(currentId, aiResponse, "assistant", steps);
 
         setPrivacyStatus("");
+        setSensitiveCount(itemCount);
+        setTimeout(() => setSensitiveCount(null), 5000);
       } else {
         // === DIRECT MODE (no privacy) ===
         if (currentModel === "claude") {
@@ -243,33 +240,7 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setPrivacyEnabled(!privacyEnabled)}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95 ${privacyEnabled
-                      ? "bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                >
-                  {privacyEnabled ? (
-                    <ShieldCheck className="h-4 w-4" />
-                  ) : (
-                    <Shield className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {privacyEnabled ? "Privacy ON" : "Privacy"}
-                  </span>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p className="text-xs">
-                  {privacyEnabled
-                    ? "Privacy mode active — PII is stripped before sending to AI"
-                    : "Click to enable privacy mode (requires local Ollama)"}
-                </p>
-              </TooltipContent>
-            </Tooltip>
+            {/* Privacy toggle hidden — privacy is always on */}
 
             <button
               onClick={logout}
@@ -308,10 +279,8 @@ const Index = () => {
           ) : (
             <div className="pb-4">
               {messages.map((msg, index) => {
-                // Attach pipeline debug to the last assistant message in the conversation
-                const isLastAssistant = msg.role === "assistant" &&
-                  !messages.slice(index + 1).some(m => m.role === "assistant");
-                const debugSteps = isLastAssistant ? pipelineDebug[`${activeId}_latest`] : undefined;
+                // Pipeline steps are loaded from Firebase per message
+                const debugSteps = msg.pipelineSteps as PipelineStep[] | undefined;
 
                 return (
                   <ChatMessage
@@ -335,6 +304,25 @@ const Index = () => {
             </div>
           )}
         </div>
+
+        {/* Sensitive items badge */}
+        <AnimatePresence>
+          {sensitiveCount !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.3 }}
+              className="flex justify-center pb-1"
+            >
+              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1">
+                <span className="text-xs font-medium text-emerald-500">
+                  🛡️ {sensitiveCount} sensitive {sensitiveCount === 1 ? 'item' : 'items'} protected
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Input */}
         <ChatInput onSend={handleSendMessage} disabled={isTyping} privacyEnabled={privacyEnabled} />
