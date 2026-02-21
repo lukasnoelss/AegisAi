@@ -67,12 +67,13 @@ export const useChat = (activeId: string | null, userId: string | undefined) => 
     return () => unsubscribe();
   }, [activeId, userId]);
 
-  const createConversation = async (title: string) => {
+  const createConversation = async (title: string, model: string = "gemini") => {
     if (!userId) throw new Error("User not authenticated");
     
     const docRef = await addDoc(collection(db, "conversations"), {
       title,
       ownerId: userId,
+      model,
       createdAt: serverTimestamp(),
     });
     return docRef.id;
@@ -102,12 +103,17 @@ export const useChat = (activeId: string | null, userId: string | undefined) => 
     await deleteDoc(doc(db, "conversations", id));
   };
 
+  const updateConversationModel = async (id: string, model: "gemini" | "claude") => {
+    await updateDoc(doc(db, "conversations", id), { model });
+  };
+
   return {
     conversations,
     messages,
     loading,
     createConversation,
     sendMessage,
-    deleteConversation
+    deleteConversation,
+    updateConversationModel
   };
 };

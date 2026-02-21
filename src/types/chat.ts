@@ -9,5 +9,6 @@ export interface Conversation {
   id: string;
   title: string;
   messages?: Message[];
+  model?: "gemini" | "claude";
   createdAt: Date;
 }
