@@ -1,4 +1,4 @@
-import { Plus, MessageSquare, Trash2, LogOut } from "lucide-react";
+import { Plus, MessageSquare, Trash2, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Conversation } from "@/types/chat";
 import type { User } from "firebase/auth";
@@ -45,7 +45,15 @@ const Sidebar = ({
         className="fixed left-0 top-0 z-50 flex h-full w-[260px] flex-col bg-sidebar-bg border-r border-sidebar-border md:relative md:z-auto md:translate-x-0"
         style={{ x: undefined }}
       >
-        <div className="flex flex-col gap-1 p-3">
+        {/* Brand */}
+        <div className="flex items-center gap-2.5 px-4 py-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15">
+            <Shield className="h-4 w-4 text-primary" />
+          </div>
+          <span className="text-sm font-bold tracking-tight text-foreground">Aegis AI</span>
+        </div>
+
+        <div className="flex flex-col gap-1 px-3 pb-1">
           <button
             onClick={onNew}
             className="flex w-full items-center gap-2 rounded-lg bg-primary/10 px-3 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/20"

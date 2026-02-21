@@ -39,7 +39,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message ChatGPT..."
+          placeholder="Message Aegis AI..."
           disabled={disabled}
           rows={1}
           className="w-full resize-none bg-transparent px-4 py-3.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 scrollbar-thin"
@@ -53,7 +53,7 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
         </button>
       </div>
       <p className="mt-2 text-center text-xs text-muted-foreground">
-        ChatGPT can make mistakes. Consider checking important information.
+        Aegis AI can make mistakes. Consider checking important information.
       </p>
     </div>
   );

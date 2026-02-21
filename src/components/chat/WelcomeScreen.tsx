@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Shield } from "lucide-react";
 import { motion } from "framer-motion";
 
 const suggestions = [
@@ -20,14 +20,19 @@ const WelcomeScreen = ({ onSuggestionClick }: WelcomeScreenProps) => {
       transition={{ duration: 0.5 }}
       className="flex flex-1 flex-col items-center justify-center px-4"
     >
-      <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/15">
-        <Sparkles className="h-8 w-8 text-primary" />
-      </div>
-      <h1 className="mb-2 text-2xl font-semibold text-foreground">
-        How can I help you today?
+      <motion.div
+        initial={{ scale: 0.85, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.1, duration: 0.4 }}
+        className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/12 ring-1 ring-primary/20"
+      >
+        <Shield className="h-8 w-8 text-primary" />
+      </motion.div>
+      <h1 className="mb-1 text-2xl font-bold tracking-tight text-foreground">
+        How can I help you?
       </h1>
       <p className="mb-8 text-sm text-muted-foreground">
-        I'm here to assist with anything you need.
+        Aegis AI — private, intelligent, always ready.
       </p>
 
       <div className="grid w-full max-w-2xl grid-cols-1 gap-2 sm:grid-cols-2">
