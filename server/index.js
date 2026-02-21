@@ -19,10 +19,13 @@ const RECONSTRUCTOR_PATH = path.resolve(__dirname, "../src/gemma/reconstructor.p
 
 /**
  * Run a Python script with arguments and return stdout as a string.
+ * Uses a 45-second timeout to prevent hanging.
  */
 function runPython(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
-    const proc = spawn("python3", [scriptPath, ...args]);
+    const proc = spawn("python3", [scriptPath, ...args], {
+      timeout: 45000, // 45 second timeout
+    });
     let stdout = "";
     let stderr = "";
 
@@ -36,15 +39,21 @@ function runPython(scriptPath, args = []) {
 
     proc.on("close", (code) => {
       if (code !== 0) {
-        reject(new Error(`Python script exited with code ${code}: ${stderr}`));
+        reject(new Error(`Python exited with code ${code}: ${stderr || "timeout"}`));
       } else {
         resolve(stdout.trim());
       }
     });
 
     proc.on("error", (err) => {
-      reject(new Error(`Failed to start Python process: ${err.message}`));
+      reject(new Error(`Failed to start Python: ${err.message}`));
     });
+
+    // Hard timeout fallback
+    setTimeout(() => {
+      proc.kill("SIGTERM");
+      reject(new Error("Timeout: deembeder took longer than 45 seconds. Ollama may be overloaded."));
+    }, 45000);
   });
 }
 

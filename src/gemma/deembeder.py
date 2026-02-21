@@ -1,7 +1,7 @@
-import subprocess
 import json
 import re
 import sys
+import urllib.request
 
 if len(sys.argv) > 1:
     phrase_to_edit = sys.argv[1]
@@ -25,12 +25,22 @@ extract_prompt = (
 )
 
 def run_ollama(prompt):
-    result = subprocess.run(
-        ["ollama", "run", "gemma3:1b", prompt],
-        capture_output=True,
-        text=True
+    """Use Ollama HTTP API instead of CLI for reliability."""
+    payload = json.dumps({
+        "model": "gemma3:1b",
+        "prompt": prompt,
+        "stream": False
+    }).encode("utf-8")
+    
+    req = urllib.request.Request(
+        "http://localhost:11434/api/generate",
+        data=payload,
+        headers={"Content-Type": "application/json"}
     )
-    return result.stdout.strip()
+    
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        result = json.loads(resp.read().decode("utf-8"))
+        return result.get("response", "").strip()
 
 extract_output = run_ollama(extract_prompt)
 

@@ -30,6 +30,7 @@ const Index = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<"gemini" | "claude">("gemini");
   const [privacyEnabled, setPrivacyEnabled] = useState(false);
+  const [privacyStatus, setPrivacyStatus] = useState<string>("");
   const [pipelineDebug, setPipelineDebug] = useState<Record<string, PipelineStep[]>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -101,7 +102,7 @@ const Index = () => {
         steps.push({ label: "Original Prompt", content: content, type: "original" });
 
         // Step 2: Deembed — strip PII
-        console.log("[Privacy] Deembedding user prompt...");
+        setPrivacyStatus("🛡️ Stripping sensitive info (local Ollama)...");
         const { sensitive_info, desensitized_prompt } = await deembed(content);
 
         steps.push({ label: "Desensitized (sent to AI)", content: desensitized_prompt, type: "desensitized" });
@@ -112,6 +113,7 @@ const Index = () => {
         });
 
         // Step 3: Send desensitized prompt to the external LLM
+        setPrivacyStatus(`🤖 Waiting for ${currentModel === "claude" ? "Claude" : "Gemini"} response...`);
         let rawLlmResponse: string;
         if (currentModel === "claude") {
           rawLlmResponse = await getClaudeResponse(desensitized_prompt, history);
@@ -122,19 +124,21 @@ const Index = () => {
         steps.push({ label: "LLM Response (with placeholders)", content: rawLlmResponse, type: "llm_response" });
 
         // Step 4: Reconstruct — restore real PII values
+        setPrivacyStatus("🔄 Restoring your personal data in response...");
         aiResponse = await reconstruct(sensitive_info, rawLlmResponse);
 
         steps.push({ label: "Reconstructed (shown to you)", content: aiResponse, type: "reconstructed" });
 
         // Save AI message to Firestore
-        const msgRef = await saveMessage(currentId, aiResponse, "assistant");
+        await saveMessage(currentId, aiResponse, "assistant");
         
-        // Store pipeline debug data keyed by a timestamp-based key
-        // We'll match it to the last assistant message
+        // Store pipeline debug data
         setPipelineDebug(prev => ({
           ...prev,
           [`${currentId}_latest`]: steps
         }));
+
+        setPrivacyStatus("");
       } else {
         // === DIRECT MODE (no privacy) ===
         if (currentModel === "claude") {
@@ -154,6 +158,7 @@ const Index = () => {
       await saveMessage(currentId, errorMsg, "assistant");
     } finally {
       setIsTyping(false);
+      setPrivacyStatus("");
     }
   };
 
@@ -291,6 +296,11 @@ const Index = () => {
               {isTyping && (
                 <div className="mx-auto max-w-3xl px-4 md:px-0">
                   <TypingIndicator />
+                  {privacyStatus && (
+                    <p className="mt-2 text-xs text-muted-foreground animate-pulse">
+                      {privacyStatus}
+                    </p>
+                  )}
                 </div>
               )}
               <div ref={messagesEndRef} />
