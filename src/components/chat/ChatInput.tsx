@@ -4,9 +4,10 @@ import { ArrowUp } from "lucide-react";
 interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
+  privacyEnabled?: boolean;
 }
 
-const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
+const ChatInput = ({ onSend, disabled, privacyEnabled }: ChatInputProps) => {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -33,13 +34,17 @@ const ChatInput = ({ onSend, disabled }: ChatInputProps) => {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-4">
-      <div className="relative rounded-2xl border border-border bg-secondary shadow-lg">
+      <div className={`relative rounded-2xl border shadow-lg transition-colors duration-300 ${
+        privacyEnabled 
+          ? "border-emerald-500/60 bg-secondary ring-1 ring-emerald-500/20" 
+          : "border-border bg-secondary"
+      }`}>
         <textarea
           ref={textareaRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Message Aegis AI..."
+          placeholder={privacyEnabled ? "🔒 Encrypted Input Channel..." : "Message Aegis AI..."}
           disabled={disabled}
           rows={1}
           className="w-full resize-none bg-transparent px-4 py-3.5 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none disabled:opacity-50 scrollbar-thin"

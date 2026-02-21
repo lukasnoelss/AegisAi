@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Menu, LogOut, Check, ChevronDown, Shield, ShieldCheck } from "lucide-react";
+import { Menu, LogOut, Check, ChevronDown, Shield, ShieldCheck, Lock } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "@/components/chat/Sidebar";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
@@ -281,6 +282,26 @@ const Index = () => {
           </div>
         </header>
 
+        {/* Privacy Banner */}
+        <AnimatePresence>
+          {privacyEnabled && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <div className="flex items-center justify-center gap-2 bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2">
+                <Lock className="h-3.5 w-3.5 text-emerald-500" />
+                <span className="text-xs font-medium text-emerald-500">
+                  Privacy Shield Active — All messages are de-identified before leaving your device
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
           {!activeId || (messages.length === 0 && !isTyping) ? (
@@ -317,7 +338,7 @@ const Index = () => {
         </div>
 
         {/* Input */}
-        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
+        <ChatInput onSend={handleSendMessage} disabled={isTyping} privacyEnabled={privacyEnabled} />
       </main>
     </div>
   );
