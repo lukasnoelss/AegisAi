@@ -12,7 +12,7 @@ export const getGeminiResponse = async (prompt: string, history: { role: string;
   try {
     console.log("Calling Gemini API...");
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const chat = model.startChat({
       history: history,
