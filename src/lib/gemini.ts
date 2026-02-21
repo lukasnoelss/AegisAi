@@ -10,13 +10,10 @@ const genAI = new GoogleGenerativeAI(API_KEY || "");
 
 export const getGeminiResponse = async (prompt: string, history: { role: string; parts: { text: string }[] }[] = []) => {
   try {
-    console.log("Calling Gemini API with prompt:", prompt);
-    console.log("History length:", history.length);
-    
-    // Using 'gemini-flash-lite-latest' (1.5 Flash-8B) for maximum speed
-    const model = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
-    
-    // Create a chat instance with the provided history
+    console.log("Calling Gemini API...");
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
     const chat = model.startChat({
       history: history,
     });

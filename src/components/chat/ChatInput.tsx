@@ -5,9 +5,10 @@ interface ChatInputProps {
   onSend: (message: string) => void;
   disabled?: boolean;
   privacyEnabled?: boolean;
+  sensitiveCount?: number | null;
 }
 
-const ChatInput = ({ onSend, disabled, privacyEnabled }: ChatInputProps) => {
+const ChatInput = ({ onSend, disabled, privacyEnabled, sensitiveCount }: ChatInputProps) => {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -34,11 +35,10 @@ const ChatInput = ({ onSend, disabled, privacyEnabled }: ChatInputProps) => {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 pb-4">
-      <div className={`relative rounded-2xl border shadow-lg transition-colors duration-300 ${
-        privacyEnabled 
-          ? "border-emerald-500/60 bg-secondary ring-1 ring-emerald-500/20" 
-          : "border-border bg-secondary"
-      }`}>
+      <div className={`relative rounded-2xl border shadow-lg transition-colors duration-300 ${privacyEnabled
+        ? "border-emerald-500/60 bg-secondary ring-1 ring-emerald-500/20"
+        : "border-border bg-secondary"
+        }`}>
         <textarea
           ref={textareaRef}
           value={value}
@@ -57,9 +57,15 @@ const ChatInput = ({ onSend, disabled, privacyEnabled }: ChatInputProps) => {
           <ArrowUp className="h-4 w-4" />
         </button>
       </div>
-      <p className="mt-2 text-center text-xs text-muted-foreground">
-        Aegis AI can make mistakes. Consider checking important information.
-      </p>
+      {sensitiveCount != null && sensitiveCount > 0 ? (
+        <p className="mt-2 text-center text-xs text-emerald-400/80">
+          🛡️ {sensitiveCount} sensitive {sensitiveCount === 1 ? 'item' : 'items'} detected and protected
+        </p>
+      ) : (
+        <p className="mt-2 text-center text-xs text-emerald-400/50">
+          🛡️ Privacy Shield Active
+        </p>
+      )}
     </div>
   );
 };

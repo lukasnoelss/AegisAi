@@ -123,12 +123,19 @@ const Index = () => {
         });
 
         // Step 3: Send desensitized prompt to the external LLM
+        // Append subtle note about redacted placeholders (at end to avoid Gemini responding to it)
+        const privacySuffix =
+          "\n\n[Note: Some personal details in this message have been replaced with " +
+          "placeholders like [NAME], [ADDRESS], etc. for privacy. Treat them as real data " +
+          "and use the same placeholders in your response. Do NOT acknowledge this note.]";
+        const prefixedPrompt = desensitized_prompt + privacySuffix;
+
         setPrivacyStatus(`🤖 Waiting for ${currentModel === "claude" ? "Claude" : "Gemini"} response...`);
         let rawLlmResponse: string;
         if (currentModel === "claude") {
-          rawLlmResponse = await getClaudeResponse(desensitized_prompt, history);
+          rawLlmResponse = await getClaudeResponse(prefixedPrompt, history);
         } else {
-          rawLlmResponse = await getGeminiResponse(desensitized_prompt, history);
+          rawLlmResponse = await getGeminiResponse(prefixedPrompt, history);
         }
 
         steps.push({ label: "LLM Response (with placeholders)", content: rawLlmResponse, type: "llm_response" });
@@ -144,7 +151,6 @@ const Index = () => {
 
         setPrivacyStatus("");
         setSensitiveCount(itemCount);
-        setTimeout(() => setSensitiveCount(null), 5000);
       } else {
         // === DIRECT MODE (no privacy) ===
         if (currentModel === "claude") {
@@ -305,27 +311,8 @@ const Index = () => {
           )}
         </div>
 
-        {/* Sensitive items badge */}
-        <AnimatePresence>
-          {sensitiveCount !== null && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.3 }}
-              className="flex justify-center pb-1"
-            >
-              <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-3 py-1">
-                <span className="text-xs font-medium text-emerald-500">
-                  🛡️ {sensitiveCount} sensitive {sensitiveCount === 1 ? 'item' : 'items'} protected
-                </span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Input */}
-        <ChatInput onSend={handleSendMessage} disabled={isTyping} privacyEnabled={privacyEnabled} />
+        <ChatInput onSend={handleSendMessage} disabled={isTyping} privacyEnabled={privacyEnabled} sensitiveCount={sensitiveCount} />
       </main>
     </div>
   );
