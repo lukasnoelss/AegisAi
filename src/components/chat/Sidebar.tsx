@@ -1,6 +1,7 @@
-import { Plus, MessageSquare, Trash2 } from "lucide-react";
+import { Plus, MessageSquare, Trash2, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import type { Conversation } from "@/types/chat";
+import type { User } from "firebase/auth";
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -10,6 +11,8 @@ interface SidebarProps {
   onDelete: (id: string) => void;
   open: boolean;
   onClose: () => void;
+  user: User | null;
+  onLogout: () => void;
 }
 
 const Sidebar = ({
@@ -20,6 +23,8 @@ const Sidebar = ({
   onDelete,
   open,
   onClose,
+  user,
+  onLogout,
 }: SidebarProps) => {
   return (
     <>
@@ -79,11 +84,17 @@ const Sidebar = ({
         </div>
 
         <div className="border-t border-sidebar-border p-3">
-          <div className="flex items-center gap-2 rounded-lg px-3 py-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-              U
+          <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-sidebar-hover">
+            <div className="flex items-center gap-2 overflow-hidden">
+              {user?.photoURL ? (
+                <img src={user.photoURL} className="h-7 w-7 rounded-full object-cover" alt="User" />
+              ) : (
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                  {user?.displayName?.[0] || user?.email?.[0] || "?"}
+                </div>
+              )}
+              <span className="truncate text-sm text-sidebar-fg">{user?.displayName || "User"}</span>
             </div>
-            <span className="text-sm text-sidebar-fg">User</span>
           </div>
         </div>
       </motion.aside>

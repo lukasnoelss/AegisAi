@@ -1,19 +1,28 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import Sidebar from "@/components/chat/Sidebar";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
 import { getMockResponse } from "@/lib/mockResponses";
-import type { Conversation, Message } from "@/types/chat";
+import { useChat } from "@/hooks/useChat";
+import { useAuth } from "@/hooks/useAuth";
 
 const Index = () => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const { user, logout } = useAuth();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const {
+    conversations,
+    messages,
+    createConversation,
+    sendMessage: saveMessage,
+    deleteConversation: removeConversation,
+  } = useChat(activeId, user?.uid);
 
   const activeConversation = conversations.find((c) => c.id === activeId);
 
@@ -23,70 +32,32 @@ const Index = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [activeConversation?.messages, isTyping, scrollToBottom]);
+  }, [messages, isTyping, scrollToBottom]);
 
-  const createConversation = (firstMessage?: string): string => {
-    const id = crypto.randomUUID();
-    const conv: Conversation = {
-      id,
-      title: firstMessage?.slice(0, 40) || "New chat",
-      messages: [],
-      createdAt: new Date(),
-    };
-    setConversations((prev) => [conv, ...prev]);
-    setActiveId(id);
-    return id;
-  };
+  const handleSendMessage = async (content: string) => {
+    let currentId = activeId;
 
-  const sendMessage = async (content: string) => {
-    let targetId = activeId;
-    if (!targetId) {
-      targetId = createConversation(content);
+    if (!currentId) {
+      currentId = await createConversation(content);
+      setActiveId(currentId);
     }
 
-    const userMsg: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      content,
-      timestamp: new Date(),
-    };
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === targetId
-          ? {
-              ...c,
-              title: c.messages.length === 0 ? content.slice(0, 40) : c.title,
-              messages: [...c.messages, userMsg],
-            }
-          : c
-      )
-    );
+    // Save user message
+    await saveMessage(currentId, content, "user");
 
     setIsTyping(true);
 
     // Simulate AI response delay
     await new Promise((r) => setTimeout(r, 1000 + Math.random() * 1500));
 
-    const aiMsg: Message = {
-      id: crypto.randomUUID(),
-      role: "assistant",
-      content: getMockResponse(),
-      timestamp: new Date(),
-    };
-
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.id === targetId
-          ? { ...c, messages: [...c.messages, aiMsg] }
-          : c
-      )
-    );
+    // Save AI message
+    await saveMessage(currentId, getMockResponse(), "assistant");
+    
     setIsTyping(false);
   };
 
-  const deleteConversation = (id: string) => {
-    setConversations((prev) => prev.filter((c) => c.id !== id));
+  const handleDeleteConversation = async (id: string) => {
+    await removeConversation(id);
     if (activeId === id) setActiveId(null);
   };
 
@@ -100,30 +71,42 @@ const Index = () => {
           setActiveId(null);
           setSidebarOpen(false);
         }}
-        onDelete={deleteConversation}
+        onDelete={handleDeleteConversation}
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        user={user}
+        onLogout={logout}
       />
 
       <main className="flex flex-1 flex-col overflow-hidden">
         {/* Header */}
-        <header className="flex items-center gap-3 border-b border-border px-4 py-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+        <header className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <h2 className="text-sm font-medium text-foreground">Chatty</h2>
+          </div>
+          
+          <button 
+            onClick={logout}
+            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-95"
           >
-            <Menu className="h-5 w-5" />
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Logout</span>
           </button>
-          <h2 className="text-sm font-medium text-foreground">ChatGPT</h2>
         </header>
 
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto scrollbar-thin">
-          {!activeConversation || activeConversation.messages.length === 0 ? (
-            <WelcomeScreen onSuggestionClick={sendMessage} />
+          {!activeId || (messages.length === 0 && !isTyping) ? (
+            <WelcomeScreen onSuggestionClick={handleSendMessage} />
           ) : (
             <div className="pb-4">
-              {activeConversation.messages.map((msg) => (
+              {messages.map((msg) => (
                 <ChatMessage key={msg.id} message={msg} />
               ))}
               {isTyping && (
@@ -137,7 +120,7 @@ const Index = () => {
         </div>
 
         {/* Input */}
-        <ChatInput onSend={sendMessage} disabled={isTyping} />
+        <ChatInput onSend={handleSendMessage} disabled={isTyping} />
       </main>
     </div>
   );
