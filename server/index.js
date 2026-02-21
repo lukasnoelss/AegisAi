@@ -24,7 +24,7 @@ const RECONSTRUCTOR_PATH = path.resolve(__dirname, "../src/gemma/reconstructor.p
 function runPython(scriptPath, args = []) {
   return new Promise((resolve, reject) => {
     const proc = spawn("python3", [scriptPath, ...args], {
-      timeout: 45000, // 45 second timeout
+      timeout: 60000, // 60 second timeout for chunked processing
     });
     let stdout = "";
     let stderr = "";
@@ -52,8 +52,8 @@ function runPython(scriptPath, args = []) {
     // Hard timeout fallback
     setTimeout(() => {
       proc.kill("SIGTERM");
-      reject(new Error("Timeout: deembeder took longer than 45 seconds. Ollama may be overloaded."));
-    }, 45000);
+      reject(new Error("Timeout: deembeder took longer than 60 seconds. Ollama may be overloaded."));
+    }, 60000);
   });
 }
 
