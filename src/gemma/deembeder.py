@@ -2,7 +2,6 @@ import json
 import re
 import sys
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 if len(sys.argv) > 1:
     phrase_to_edit = sys.argv[1]
@@ -118,9 +117,8 @@ for match in re.finditer(address_pattern, phrase_to_edit):
 # ──────────────────────────────────────────────
 
 # Chunking for large prompts: split into manageable pieces for Ollama
-MAX_CHUNK_SIZE = 500
-OVERLAP = 100
-MAX_PARALLEL_WORKERS = 3
+MAX_CHUNK_SIZE = 1500
+OVERLAP = 200
 
 def chunk_text(text, max_size=MAX_CHUNK_SIZE, overlap=OVERLAP):
     """Split text into overlapping chunks for LLM processing."""
@@ -169,7 +167,7 @@ def build_extract_prompt(text_chunk):
 def run_ollama(prompt):
     """Use Ollama HTTP API."""
     payload = json.dumps({
-        "model": "gemma3:1b",
+        "model": "gemma3:270m",
         "prompt": prompt,
         "stream": False
     }).encode("utf-8")
@@ -239,27 +237,12 @@ def parse_llm_output(llm_output, source_text):
                     continue
                 add_sensitive(key, value)
 
-# Process chunks through LLM — in parallel for speed
-def process_chunk(chunk):
-    """Process a single chunk: build prompt, call Ollama, return raw output."""
-    prompt = build_extract_prompt(chunk)
-    return run_ollama(prompt)
-
+# Process chunks through LLM
 chunks = chunk_text(phrase_to_edit)
-if len(chunks) == 1:
-    # Single chunk — no threading overhead needed
-    llm_output = process_chunk(chunks[0])
+for chunk in chunks:
+    extract_prompt = build_extract_prompt(chunk)
+    llm_output = run_ollama(extract_prompt)
     parse_llm_output(llm_output, phrase_to_edit)
-else:
-    # Multiple chunks — run in parallel
-    with ThreadPoolExecutor(max_workers=min(MAX_PARALLEL_WORKERS, len(chunks))) as executor:
-        futures = {executor.submit(process_chunk, chunk): i for i, chunk in enumerate(chunks)}
-        for future in as_completed(futures):
-            try:
-                llm_output = future.result()
-                parse_llm_output(llm_output, phrase_to_edit)
-            except Exception as e:
-                print(f"Warning: chunk processing error: {e}", file=sys.stderr)
 
 # ──────────────────────────────────────────────
 # PHASE 3: Build desensitized prompt

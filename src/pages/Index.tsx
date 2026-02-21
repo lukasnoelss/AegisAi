@@ -30,8 +30,9 @@ const Index = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<"gemini" | "claude">("gemini");
-  const [privacyEnabled] = useState(true); // Always-on privacy
+  const [privacyEnabled, setPrivacyEnabled] = useState(false);
   const [privacyStatus, setPrivacyStatus] = useState<string>("");
+  const [pipelineDebug, setPipelineDebug] = useState<Record<string, PipelineStep[]>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -137,8 +138,14 @@ const Index = () => {
 
         steps.push({ label: "Reconstructed (shown to you)", content: aiResponse, type: "reconstructed" });
 
-        // Save AI message to Firestore with pipeline steps
-        await saveMessage(currentId, aiResponse, "assistant", steps);
+        // Save AI message to Firestore
+        await saveMessage(currentId, aiResponse, "assistant");
+
+        // Store pipeline debug data
+        setPipelineDebug(prev => ({
+          ...prev,
+          [`${currentId}_latest`]: steps
+        }));
 
         setPrivacyStatus("");
       } else {
@@ -236,16 +243,14 @@ const Index = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Privacy toggle hidden — privacy is always on
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setPrivacyEnabled(!privacyEnabled)}
-                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95 ${
-                    privacyEnabled
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95 ${privacyEnabled
                       ? "bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  }`}
+                    }`}
                 >
                   {privacyEnabled ? (
                     <ShieldCheck className="h-4 w-4" />
@@ -265,7 +270,6 @@ const Index = () => {
                 </p>
               </TooltipContent>
             </Tooltip>
-            */}
 
             <button
               onClick={logout}
@@ -304,8 +308,10 @@ const Index = () => {
           ) : (
             <div className="pb-4">
               {messages.map((msg, index) => {
-                // Pipeline steps are loaded from Firebase per message
-                const debugSteps = msg.pipelineSteps as PipelineStep[] | undefined;
+                // Attach pipeline debug to the last assistant message in the conversation
+                const isLastAssistant = msg.role === "assistant" &&
+                  !messages.slice(index + 1).some(m => m.role === "assistant");
+                const debugSteps = isLastAssistant ? pipelineDebug[`${activeId}_latest`] : undefined;
 
                 return (
                   <ChatMessage

@@ -97,23 +97,14 @@ export const useChat = (activeId: string | null, userId: string | undefined) => 
     }
   };
 
-  const sendMessage = async (
-    convId: string,
-    content: string,
-    role: "user" | "assistant",
-    pipelineSteps?: { label: string; content: string; type: string }[]
-  ) => {
+  const sendMessage = async (convId: string, content: string, role: "user" | "assistant") => {
     if (!userId) return;
 
-    const messageData: Record<string, any> = {
+    const messageData = {
       content,
       role,
       timestamp: serverTimestamp(),
     };
-
-    if (pipelineSteps && pipelineSteps.length > 0) {
-      messageData.pipelineSteps = pipelineSteps;
-    }
 
     await addDoc(collection(db, "conversations", convId, "messages"), messageData);
 

@@ -61,7 +61,7 @@ const Sidebar = ({
             <Plus className="h-4 w-4" />
             New chat
           </button>
-          
+
           {conversations.length > 0 && (
             <button
               onClick={onDeleteAll}
@@ -84,11 +84,10 @@ const Sidebar = ({
                 onSelect(conv.id);
                 onClose();
               }}
-              className={`group flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
-                activeId === conv.id
+              className={`group flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${activeId === conv.id
                   ? "bg-sidebar-active text-foreground"
                   : "text-sidebar-fg hover:bg-sidebar-hover"
-              }`}
+                }`}
             >
               <MessageSquare className="h-4 w-4 shrink-0 opacity-60" />
               <span className="flex-1 truncate">{conv.title}</span>
