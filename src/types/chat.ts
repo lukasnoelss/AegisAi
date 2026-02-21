@@ -3,6 +3,7 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  pipelineSteps?: { label: string; content: string; type: string }[];
 }
 
 export interface Conversation {

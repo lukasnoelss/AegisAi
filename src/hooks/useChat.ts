@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import { 
-  collection, 
-  query, 
-  orderBy, 
+import {
+  collection,
+  query,
+  orderBy,
   where,
-  onSnapshot, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
   serverTimestamp,
-  Timestamp 
+  Timestamp
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Conversation, Message } from "@/types/chat";
@@ -25,21 +25,21 @@ export const useChat = (activeId: string | null, userId: string | undefined) => 
     if (!userId) return;
 
     const q = query(
-      collection(db, "conversations"), 
+      collection(db, "conversations"),
       where("ownerId", "==", userId)
     );
-    
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const convs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         createdAt: (doc.data().createdAt as Timestamp)?.toDate() || new Date(),
       })) as Conversation[];
-      
+
       // Client-side sorting to ensure the latest shows up at the top
       // This avoids the need for a composite index in Firestore initially
       const sortedConvs = convs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      
+
       console.log("Fetched and sorted conversations:", sortedConvs.length);
       setConversations(sortedConvs);
       setLoading(false);
@@ -81,7 +81,7 @@ export const useChat = (activeId: string | null, userId: string | undefined) => 
   const createConversation = async (title: string, model: string = "gemini") => {
     if (!userId) throw new Error("User not authenticated");
     console.log("Creating conversation for user:", userId, "with model:", model);
-    
+
     try {
       const docRef = await addDoc(collection(db, "conversations"), {
         title: title.slice(0, 40) || "New chat",
@@ -97,17 +97,26 @@ export const useChat = (activeId: string | null, userId: string | undefined) => 
     }
   };
 
-  const sendMessage = async (convId: string, content: string, role: "user" | "assistant") => {
+  const sendMessage = async (
+    convId: string,
+    content: string,
+    role: "user" | "assistant",
+    pipelineSteps?: { label: string; content: string; type: string }[]
+  ) => {
     if (!userId) return;
 
-    const messageData = {
+    const messageData: Record<string, any> = {
       content,
       role,
       timestamp: serverTimestamp(),
     };
 
+    if (pipelineSteps && pipelineSteps.length > 0) {
+      messageData.pipelineSteps = pipelineSteps;
+    }
+
     await addDoc(collection(db, "conversations", convId, "messages"), messageData);
-    
+
     // Update conversation title if it's the first message
     const conv = conversations.find(c => c.id === convId);
     if (conv && (!conv.title || conv.title === "New chat")) {

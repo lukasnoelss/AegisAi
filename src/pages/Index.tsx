@@ -30,9 +30,8 @@ const Index = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<"gemini" | "claude">("gemini");
-  const [privacyEnabled, setPrivacyEnabled] = useState(false);
+  const [privacyEnabled] = useState(true); // Always-on privacy
   const [privacyStatus, setPrivacyStatus] = useState<string>("");
-  const [pipelineDebug, setPipelineDebug] = useState<Record<string, PipelineStep[]>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -95,7 +94,7 @@ const Index = () => {
           role: msg.role === "user" ? "user" : "model",
           parts: [{ text: msg.content }]
         }));
-      
+
       // Ensure history starts with a 'user' message (Gemini requirement)
       while (history.length > 0 && history[0].role !== "user") {
         history.shift();
@@ -138,14 +137,8 @@ const Index = () => {
 
         steps.push({ label: "Reconstructed (shown to you)", content: aiResponse, type: "reconstructed" });
 
-        // Save AI message to Firestore
-        await saveMessage(currentId, aiResponse, "assistant");
-        
-        // Store pipeline debug data
-        setPipelineDebug(prev => ({
-          ...prev,
-          [`${currentId}_latest`]: steps
-        }));
+        // Save AI message to Firestore with pipeline steps
+        await saveMessage(currentId, aiResponse, "assistant", steps);
 
         setPrivacyStatus("");
       } else {
@@ -211,14 +204,14 @@ const Index = () => {
             >
               <Menu className="h-5 w-5" />
             </button>
-            
+
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent focus:outline-none">
                 {currentModel === "gemini" ? "Gemini 1.5 Flash-8B" : "Claude 3.5 Sonnet"}
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[200px] bg-popover border-border">
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleModelChange("gemini")}
                   className="flex items-center justify-between py-2 cursor-pointer"
                 >
@@ -228,7 +221,7 @@ const Index = () => {
                   </div>
                   {currentModel === "gemini" && <Check className="h-4 w-4 text-primary" />}
                 </DropdownMenuItem>
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleModelChange("claude")}
                   className="flex items-center justify-between py-2 cursor-pointer"
                 >
@@ -241,8 +234,9 @@ const Index = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          
+
           <div className="flex items-center gap-2">
+            {/* Privacy toggle hidden — privacy is always on
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -271,8 +265,9 @@ const Index = () => {
                 </p>
               </TooltipContent>
             </Tooltip>
+            */}
 
-            <button 
+            <button
               onClick={logout}
               className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-95"
             >
@@ -309,15 +304,13 @@ const Index = () => {
           ) : (
             <div className="pb-4">
               {messages.map((msg, index) => {
-                // Attach pipeline debug to the last assistant message in the conversation
-                const isLastAssistant = msg.role === "assistant" && 
-                  !messages.slice(index + 1).some(m => m.role === "assistant");
-                const debugSteps = isLastAssistant ? pipelineDebug[`${activeId}_latest`] : undefined;
-                
+                // Pipeline steps are loaded from Firebase per message
+                const debugSteps = msg.pipelineSteps as PipelineStep[] | undefined;
+
                 return (
-                  <ChatMessage 
-                    key={msg.id} 
-                    message={msg} 
+                  <ChatMessage
+                    key={msg.id}
+                    message={msg}
                     pipelineSteps={debugSteps}
                   />
                 );
