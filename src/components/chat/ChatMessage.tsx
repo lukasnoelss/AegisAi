@@ -2,12 +2,14 @@ import ReactMarkdown from "react-markdown";
 import { motion } from "framer-motion";
 import { User, Sparkles } from "lucide-react";
 import type { Message } from "@/types/chat";
+import PrivacyDebugPanel, { type PipelineStep } from "./PrivacyDebugPanel";
 
 interface ChatMessageProps {
   message: Message;
+  pipelineSteps?: PipelineStep[];
 }
 
-const ChatMessage = ({ message }: ChatMessageProps) => {
+const ChatMessage = ({ message, pipelineSteps }: ChatMessageProps) => {
   const isUser = message.role === "user";
 
   return (
@@ -101,6 +103,9 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
               {message.content}
             </ReactMarkdown>
           </div>
+          {!isUser && pipelineSteps && pipelineSteps.length > 0 && (
+            <PrivacyDebugPanel steps={pipelineSteps} />
+          )}
         </div>
       </div>
     </motion.div>

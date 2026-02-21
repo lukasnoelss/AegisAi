@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Menu, LogOut, Check, ChevronDown } from "lucide-react";
+import { Menu, LogOut, Check, ChevronDown, Shield, ShieldCheck } from "lucide-react";
 import Sidebar from "@/components/chat/Sidebar";
 import ChatMessage from "@/components/chat/ChatMessage";
 import ChatInput from "@/components/chat/ChatInput";
 import TypingIndicator from "@/components/chat/TypingIndicator";
 import WelcomeScreen from "@/components/chat/WelcomeScreen";
+import type { PipelineStep } from "@/components/chat/PrivacyDebugPanel";
 import { getGeminiResponse } from "@/lib/gemini";
 import { getClaudeResponse } from "@/lib/claude";
+import { deembed, reconstruct } from "@/lib/privacyPipeline";
 import { useChat } from "@/hooks/useChat";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -15,6 +17,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const Index = () => {
   const { user, logout } = useAuth();
@@ -22,6 +29,9 @@ const Index = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState<"gemini" | "claude">("gemini");
+  const [privacyEnabled, setPrivacyEnabled] = useState(false);
+  const [privacyStatus, setPrivacyStatus] = useState<string>("");
+  const [pipelineDebug, setPipelineDebug] = useState<Record<string, PipelineStep[]>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -68,35 +78,95 @@ const Index = () => {
       setActiveId(currentId);
     }
 
-    // Save user message to Firestore
+    // Save user message to Firestore (always the original)
     await saveMessage(currentId, content, "user");
 
     setIsTyping(true);
 
     try {
-      // Prepare history
-      const history = messages
+      // Prepare history — Gemini requires it to start with 'user' role
+      let history = messages
         .filter(msg => msg.content !== content)
+        .filter(msg => !msg.content.startsWith("Sorry, I encountered an error"))
+        .filter(msg => !msg.content.startsWith("Privacy pipeline error"))
+        .filter(msg => !msg.content.startsWith("I'm sorry, I'm having trouble"))
         .map(msg => ({
           role: msg.role === "user" ? "user" : "model",
           parts: [{ text: msg.content }]
         }));
-
-      // Get real AI response based on current model
-      let aiResponse;
-      if (currentModel === "claude") {
-        aiResponse = await getClaudeResponse(content, history);
-      } else {
-        aiResponse = await getGeminiResponse(content, history);
+      
+      // Ensure history starts with a 'user' message (Gemini requirement)
+      while (history.length > 0 && history[0].role !== "user") {
+        history.shift();
       }
 
-      // Save AI message to Firestore
-      await saveMessage(currentId, aiResponse, "assistant");
-    } catch (error) {
+      let aiResponse: string;
+
+      if (privacyEnabled) {
+        // === PRIVACY PIPELINE ===
+        const steps: PipelineStep[] = [];
+
+        // Step 1: Record original prompt
+        steps.push({ label: "Original Prompt", content: content, type: "original" });
+
+        // Step 2: Deembed — strip PII
+        setPrivacyStatus("🛡️ Stripping sensitive info (local Ollama)...");
+        const { sensitive_info, desensitized_prompt } = await deembed(content);
+
+        steps.push({ label: "Desensitized (sent to AI)", content: desensitized_prompt, type: "desensitized" });
+        steps.push({
+          label: "Sensitive Info Map",
+          content: Object.entries(sensitive_info).map(([k, v]) => `[${k}] → ${v}`).join("\n"),
+          type: "info"
+        });
+
+        // Step 3: Send desensitized prompt to the external LLM
+        setPrivacyStatus(`🤖 Waiting for ${currentModel === "claude" ? "Claude" : "Gemini"} response...`);
+        let rawLlmResponse: string;
+        if (currentModel === "claude") {
+          rawLlmResponse = await getClaudeResponse(desensitized_prompt, history);
+        } else {
+          rawLlmResponse = await getGeminiResponse(desensitized_prompt, history);
+        }
+
+        steps.push({ label: "LLM Response (with placeholders)", content: rawLlmResponse, type: "llm_response" });
+
+        // Step 4: Reconstruct — restore real PII values
+        setPrivacyStatus("🔄 Restoring your personal data in response...");
+        aiResponse = await reconstruct(sensitive_info, rawLlmResponse);
+
+        steps.push({ label: "Reconstructed (shown to you)", content: aiResponse, type: "reconstructed" });
+
+        // Save AI message to Firestore
+        await saveMessage(currentId, aiResponse, "assistant");
+        
+        // Store pipeline debug data
+        setPipelineDebug(prev => ({
+          ...prev,
+          [`${currentId}_latest`]: steps
+        }));
+
+        setPrivacyStatus("");
+      } else {
+        // === DIRECT MODE (no privacy) ===
+        if (currentModel === "claude") {
+          aiResponse = await getClaudeResponse(content, history);
+        } else {
+          aiResponse = await getGeminiResponse(content, history);
+        }
+
+        // Save AI message to Firestore
+        await saveMessage(currentId, aiResponse, "assistant");
+      }
+    } catch (error: any) {
       console.error("AI response error:", error);
-      await saveMessage(currentId, "I'm sorry, I'm having trouble connecting right now.", "assistant");
+      const errorMsg = error.message?.includes("Deembed failed")
+        ? "Privacy pipeline error: Make sure the backend server is running (`npm run server`) and Ollama is available."
+        : "I'm sorry, I'm having trouble connecting right now.";
+      await saveMessage(currentId, errorMsg, "assistant");
     } finally {
       setIsTyping(false);
+      setPrivacyStatus("");
     }
   };
 
@@ -171,13 +241,44 @@ const Index = () => {
             </DropdownMenu>
           </div>
           
-          <button 
-            onClick={logout}
-            className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-95"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => setPrivacyEnabled(!privacyEnabled)}
+                  className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95 ${
+                    privacyEnabled
+                      ? "bg-emerald-500/15 text-emerald-500 ring-1 ring-emerald-500/30"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  }`}
+                >
+                  {privacyEnabled ? (
+                    <ShieldCheck className="h-4 w-4" />
+                  ) : (
+                    <Shield className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {privacyEnabled ? "Privacy ON" : "Privacy"}
+                  </span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs">
+                  {privacyEnabled
+                    ? "Privacy mode active — PII is stripped before sending to AI"
+                    : "Click to enable privacy mode (requires local Ollama)"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+
+            <button 
+              onClick={logout}
+              className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground active:scale-95"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
+          </div>
         </header>
 
         {/* Messages area */}
@@ -186,12 +287,28 @@ const Index = () => {
             <WelcomeScreen onSuggestionClick={handleSendMessage} />
           ) : (
             <div className="pb-4">
-              {messages.map((msg) => (
-                <ChatMessage key={msg.id} message={msg} />
-              ))}
+              {messages.map((msg, index) => {
+                // Attach pipeline debug to the last assistant message in the conversation
+                const isLastAssistant = msg.role === "assistant" && 
+                  !messages.slice(index + 1).some(m => m.role === "assistant");
+                const debugSteps = isLastAssistant ? pipelineDebug[`${activeId}_latest`] : undefined;
+                
+                return (
+                  <ChatMessage 
+                    key={msg.id} 
+                    message={msg} 
+                    pipelineSteps={debugSteps}
+                  />
+                );
+              })}
               {isTyping && (
                 <div className="mx-auto max-w-3xl px-4 md:px-0">
                   <TypingIndicator />
+                  {privacyStatus && (
+                    <p className="mt-2 text-xs text-muted-foreground animate-pulse">
+                      {privacyStatus}
+                    </p>
+                  )}
                 </div>
               )}
               <div ref={messagesEndRef} />
