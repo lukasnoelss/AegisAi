@@ -293,6 +293,7 @@ const Index = () => {
                     key={msg.id}
                     message={msg}
                     pipelineSteps={debugSteps}
+                    onRerun={handleSendMessage}
                   />
                 );
               })}
