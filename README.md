@@ -22,28 +22,20 @@ Aegis AI is a privacy-first chat application that **de-identifies sensitive info
 │              │  ┌──────────────────────────────────────────┐   │     │
 │              │  │  deembeder.py                            │   │     │
 │              │  │                                          │   │     │
-│              │  │  PHASE 1: Regex Detection                │   │     │
-│              │  │    • Emails, phones, IBANs, SSNs         │   │     │
-│              │  │    • Credit cards, VAT numbers           │   │     │
-│              │  │    • Addresses, PO Boxes, postcodes      │   │     │
-│              │  │    • Company names (suffix + CamelCase)  │   │     │
-│              │  │    • Passwords (alphanumeric detection)   │   │     │
-│              │  │    • Names (salutations, field labels,   │   │     │
-│              │  │      middle initials, heuristic)         │   │     │
-│              │  │    • Signature blocks, country names     │   │     │
-│              │  │    • Secrets (API keys, env vars, URLs)  │   │     │
+│              │  │  PHASE 1: Regex Detection (fast)         │   │     │
+│              │  │    • Structured PII: emails, phones,     │   │     │
+│              │  │      IBANs, SSNs, cards, VAT, postcodes  │   │     │
+│              │  │    • Addresses, PO Boxes, signatures     │   │     │
+│              │  │    • Company names, passwords, secrets   │   │     │
+│              │  │    • Names via salutations & labels      │   │     │
 │              │  │                                          │   │     │
-│              │  │  PHASE 2a: Focused LLM Pass (Ollama)     │   │     │
-│              │  │    • Names + company names combined      │   │     │
+│              │  │  PHASE 2: Gemma3 240M LLM (semantic)     │   │     │
+│              │  │    • Deep contextual name/company detect │   │     │
+│              │  │    • Catches PII that regex cannot       │   │     │
 │              │  │                                          │   │     │
-│              │  │  PHASE 2b: Broad LLM Pass (Ollama)       │   │     │
-│              │  │    • All remaining PII categories        │   │     │
-│              │  │                                          │   │     │
-│              │  │  PHASE 3: Replacement                    │   │     │
+│              │  │  PHASE 3: Replacement engine              │   │     │
 │              │  │    • Whitespace-flexible substitution    │   │     │
 │              │  │    • Cascading root-word replacement     │   │     │
-│              │  │    • Partial company name variants       │   │     │
-│              │  │    • Name word cascading                 │   │     │
 │              │  └──────────────────────────────────────────┘   │     │
 │              └─────────────────────────────────────────────────┘     │
 │                                           │                          │
@@ -80,44 +72,28 @@ Aegis AI is a privacy-first chat application that **de-identifies sensitive info
 | Markdown | react-markdown |
 | Auth & Database | Firebase (Auth + Firestore) |
 | Privacy Pipeline | Node.js Express server (port 3001) |
-| Local LLM | Ollama (`gemma3:270m`) |
+| Local LLM | Ollama — Gemma3 240M (runs entirely on-device) |
 | Cloud LLMs | Google Gemini (`gemini-2.5-flash`), Anthropic Claude |
 
 ## Privacy Pipeline — Detection Categories
 
-The deembeder uses a **layered approach** — fast regex first, then LLM passes for context-dependent detection:
+The deembeder uses a **two-layer approach**: regex for structured/patterned PII, then **Gemma3 240M** (via Ollama) for semantic, context-dependent detection that regex cannot catch.
 
-| Category | Detection Method | Examples |
-|----------|-----------------|----------|
-| Emails | Regex | `user@example.com` |
-| Phone Numbers | Regex | `+353 87 123 4567` |
-| IBAN | Regex | `GB29NWBK60161331926819` |
-| Credit/Debit Cards | Regex | `4242 4242 4242 4242` |
-| SSN (incl. masked) | Regex | `XXX-XX-4928` |
-| VAT Numbers | Regex | `VAT No.: GB 123 4567 89` |
-| Postcodes | Regex | `WC2A 1AP`, `D02 Y006`, `98101` |
-| Passwords | Regex | `Hunter2`, `P4ssw0rd`, `password is X` |
-| PO Box Addresses | Regex | `PO Box 9948, Bellevue, WA` |
-| Street Addresses | Regex | `54 Olmer Road, Dublin` |
-| Company Names (suffix) | Regex | `JJ Solicitors and Sons` |
-| Company Names (CamelCase) | Regex | `MediMatch`, `PayPal` |
-| Country Names | Regex | `United Kingdom`, `Ireland` |
-| API Keys & Secrets | Regex | `OPENAI_API_KEY=sk-...` |
-| Names (salutations) | Regex | `Dear Advik`, `My dearest Elara` |
-| Names (field labels) | Regex | `Borrowers: Jonathan H. Sterling` |
-| Names (middle initials) | Regex | `Eleanor V. Sterling` |
-| Names (heuristic) | Regex | Two+ capitalized words |
-| Signature Blocks | Regex | Everything after `Sincerely,` etc. |
-| Person Names | LLM (Ollama) | Context-dependent name detection |
-| Organization Names | LLM (Ollama) | Context-dependent company detection |
-| All Other PII | LLM (Ollama) | Medical, legal, financial info |
+| Layer | What it catches |
+|-------|----------------|
+| **Regex** — Identifiers | Emails, phone numbers, IBANs, credit/debit cards, SSNs (incl. masked), VAT numbers, account numbers |
+| **Regex** — Locations | Street addresses, PO Boxes, postcodes (UK/US/IE), country names |
+| **Regex** — Names | Salutation names (`Dear X`), field labels (`Borrowers: X`), middle initials, capitalized word heuristic, signature blocks |
+| **Regex** — Credentials | Passwords & alphanumeric tokens, API keys, env vars, secrets |
+| **Regex** — Companies | Legal suffix patterns (`Ltd`, `Inc`, `LLC`), CamelCase brands (`MediMatch`, `PayPal`) |
+| **Gemma3 LLM** — Semantic | Person names in natural context, organization names without suffixes, and any remaining PII the regex layer missed — uses a focused prompt for thorough, context-aware extraction |
 
 ## Getting Started
 
 ### Prerequisites
 
 - **Node.js** ≥ 18 and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-- **Ollama** — [install from ollama.ai](https://ollama.ai) with `gemma3:270m` model pulled
+- **Ollama** — [install from ollama.ai](https://ollama.ai) with the Gemma3 240M model pulled
 - **Firebase** project with Firestore and Authentication enabled
 - **API Keys** for Gemini and/or Claude
 
