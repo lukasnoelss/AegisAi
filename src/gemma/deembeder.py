@@ -169,9 +169,9 @@ for match in re.finditer(general_address_pattern, phrase_to_edit, re.IGNORECASE)
     add_sensitive("ADDRESS", match.group(0).strip().rstrip(","))
 
 # Company/organization names with legal entity suffixes
-# Catches "JJ Solicitors", "Acme Ltd", "Smith & Co", etc.
-company_pattern = r'\b([A-Z][a-zA-Z&]+(?:\s+[A-Z][a-zA-Z&]+){0,3})\s+(Solicitors|Solicitor|Attorneys|Law\s+Firm|LLP|LLC|Ltd|Limited|Inc|Incorporated|Corp|Corporation|Associates|Partners|Group|Holdings|Consulting|Services|Solutions|Agency|Bank|Insurance|Trust|Foundation)\b'
-for match in re.finditer(company_pattern, phrase_to_edit):
+# Catches "JJ Solicitors", "AURION SYSTEMS INC.", "Acme Ltd", etc.
+company_pattern = r'\b([A-Za-z][A-Za-z&]+(?:\s+[A-Za-z][A-Za-z&]+){0,3})\s+(Solicitors?|Attorneys|Law\s+Firm|LLP|LLC|Ltd|Limited|Inc|Incorporated|Corp|Corporation|Associates|Partners|Group|Holdings|Consulting|Services|Solutions|Agency|Bank|Insurance|Trust|Foundation)\.?\b'
+for match in re.finditer(company_pattern, phrase_to_edit, re.IGNORECASE):
     add_sensitive("COMPANY_NAME", match.group(0).strip())
 
 # ──────────────────────────────────────────────
@@ -335,29 +335,33 @@ def parse_llm_output(llm_output, source_text):
                 add_sensitive(key, value)
 
 # ──────────────────────────────────────────────
-# PHASE 2a: Name-focused LLM pass (runs first, always)
+# PHASE 2a: Names + Companies focused LLM pass
 # ──────────────────────────────────────────────
-def build_name_prompt(text_chunk):
-    """Focused prompt that ONLY asks for names — more reliable on small models."""
+def build_names_and_companies_prompt(text_chunk):
+    """Focused prompt for person names AND company/org names."""
     return (
-        "List every person's name in this text. Include first names, last names, "
-        "full names, nicknames, and usernames. Extract the EXACT text.\n"
-        "Format: one per line as NAME: value\n"
-        "If no names found, respond with: NONE\n\n"
+        "List every person's name AND every company/organization/business name "
+        "in this text. Extract the EXACT text as written.\n\n"
+        "For people: include first names, last names, full names, nicknames.\n"
+        "For companies: include the full name (e.g. 'Aurion Systems Inc'), "
+        "and any short/abbreviated versions used.\n\n"
+        "Format: one per line:\n"
+        "NAME: person name\n"
+        "COMPANY_NAME: company or org name\n"
+        "If nothing found, respond with: NONE\n\n"
         f"Text: {text_chunk}"
     )
 
-# Run name-only extraction first
+# Run combined name + company extraction
 chunks = chunk_text(phrase_to_edit)
 for chunk in chunks:
-    name_prompt = build_name_prompt(chunk)
-    name_output = run_ollama(name_prompt)
-    parse_llm_output(name_output, phrase_to_edit)
+    prompt = build_names_and_companies_prompt(chunk)
+    output = run_ollama(prompt)
+    parse_llm_output(output, phrase_to_edit)
 
 # ──────────────────────────────────────────────
 # PHASE 2b: Broad LLM extraction (everything else)
 # ──────────────────────────────────────────────
-# Process chunks through LLM
 for chunk in chunks:
     extract_prompt = build_extract_prompt(chunk)
     llm_output = run_ollama(extract_prompt)
@@ -366,10 +370,43 @@ for chunk in chunks:
 # ──────────────────────────────────────────────
 # PHASE 3: Build desensitized prompt
 # ──────────────────────────────────────────────
+
+# Common suffixes/words that should NOT be matched standalone
+COMPANY_SUFFIX_WORDS = {
+    "inc", "inc.", "llc", "ltd", "limited", "corp", "corporation", "co", "co.",
+    "llp", "plc", "group", "holdings", "services", "solutions", "consulting",
+    "associates", "partners", "agency", "bank", "insurance", "trust",
+    "foundation", "solicitors", "solicitor", "attorneys", "systems", "system",
+    "technologies", "technology", "tech", "digital", "global", "international",
+    "capital", "ventures", "labs", "studio", "studios", "media", "network",
+    "networks", "platform", "software", "data", "cloud", "ai", "sons", 
+}
+
+# Collect root words from company names for cascading replacement
+company_roots = {}  # maps root_word -> placeholder_key
+for key, value in sensitive_info.items():
+    if "COMPANY" in key:
+        # Extract individual words from the company name
+        words = value.split()
+        for word in words:
+            clean = word.strip(".,;:!?\"'()").lower()
+            # Skip if it's a common suffix/generic word or too short
+            if clean in COMPANY_SUFFIX_WORDS or len(clean) < 3:
+                continue
+            # This is a meaningful root word (e.g. "Aurion" from "Aurion Systems Inc")
+            company_roots[clean] = key
+
 # Sort by value length descending to replace longer matches first
 desensitized_output = phrase_to_edit
 for key, value in sorted(sensitive_info.items(), key=lambda x: len(x[1]), reverse=True):
     desensitized_output = re.sub(re.escape(value), f"[{key}]", desensitized_output, flags=re.IGNORECASE)
+
+# Cascading: replace any remaining standalone mentions of company root words
+for root_word, placeholder_key in company_roots.items():
+    # Use word boundary matching to catch standalone mentions like "Aurion"
+    # but not partial matches within other words
+    pattern = r'\b' + re.escape(root_word) + r'\b'
+    desensitized_output = re.sub(pattern, f"[{placeholder_key}]", desensitized_output, flags=re.IGNORECASE)
 
 output = {
     "sensitive_info": sensitive_info,
