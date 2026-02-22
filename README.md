@@ -29,11 +29,13 @@ Aegis AI is a privacy-first chat application that **de-identifies sensitive info
 │              │  │    • Company names, passwords, secrets   │   │     │
 │              │  │    • Names via salutations & labels      │   │     │
 │              │  │                                          │   │     │
-│              │  │  PHASE 2: Gemma3 240M LLM (semantic)     │   │     │
-│              │  │    • Deep contextual name/company detect │   │     │
-│              │  │    • Catches PII that regex cannot       │   │     │
+│              │  │  PHASE 2a: Focused LLM Pass (Ollama)     │   │     │
+│              │  │    • Names + company names combined      │   │     │
 │              │  │                                          │   │     │
-│              │  │  PHASE 3: Replacement engine              │   │     │
+│              │  │  PHASE 2b: Broad LLM Pass (Ollama)       │   │     │
+│              │  │    • All remaining PII categories        │   │     │
+│              │  │                                          │   │     │
+│              │  │  PHASE 3: Replacement engine             │   │     │
 │              │  │    • Whitespace-flexible substitution    │   │     │
 │              │  │    • Cascading root-word replacement     │   │     │
 │              │  └──────────────────────────────────────────┘   │     │
