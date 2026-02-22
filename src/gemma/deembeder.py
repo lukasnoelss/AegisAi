@@ -246,7 +246,7 @@ def build_extract_prompt(text_chunk):
 def run_ollama(prompt):
     """Use Ollama HTTP API."""
     payload = json.dumps({
-        "model": "gemma3:1b",
+        "model": "gemma3:270m",
         "prompt": prompt,
         "stream": False
     }).encode("utf-8")
@@ -334,8 +334,30 @@ def parse_llm_output(llm_output, source_text):
                     continue
                 add_sensitive(key, value)
 
-# Process chunks through LLM
+# ──────────────────────────────────────────────
+# PHASE 2a: Name-focused LLM pass (runs first, always)
+# ──────────────────────────────────────────────
+def build_name_prompt(text_chunk):
+    """Focused prompt that ONLY asks for names — more reliable on small models."""
+    return (
+        "List every person's name in this text. Include first names, last names, "
+        "full names, nicknames, and usernames. Extract the EXACT text.\n"
+        "Format: one per line as NAME: value\n"
+        "If no names found, respond with: NONE\n\n"
+        f"Text: {text_chunk}"
+    )
+
+# Run name-only extraction first
 chunks = chunk_text(phrase_to_edit)
+for chunk in chunks:
+    name_prompt = build_name_prompt(chunk)
+    name_output = run_ollama(name_prompt)
+    parse_llm_output(name_output, phrase_to_edit)
+
+# ──────────────────────────────────────────────
+# PHASE 2b: Broad LLM extraction (everything else)
+# ──────────────────────────────────────────────
+# Process chunks through LLM
 for chunk in chunks:
     extract_prompt = build_extract_prompt(chunk)
     llm_output = run_ollama(extract_prompt)
