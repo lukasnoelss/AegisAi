@@ -65,6 +65,13 @@ regex_patterns = [
     # Country names
     (r'\b(?:United Kingdom|United States|United Arab Emirates|Ireland|England|Scotland|Wales|Northern Ireland|France|Germany|Spain|Italy|Netherlands|Belgium|Switzerland|Austria|Portugal|Sweden|Norway|Denmark|Finland|Poland|Czech Republic|Hungary|Romania|Bulgaria|Greece|Turkey|Russia|China|Japan|South Korea|India|Pakistan|Bangladesh|Sri Lanka|Australia|New Zealand|Canada|Mexico|Brazil|Argentina|Colombia|South Africa|Nigeria|Kenya|Egypt|Saudi Arabia|Israel|Singapore|Malaysia|Indonesia|Philippines|Thailand|Vietnam)\b', "COUNTRY"),
 
+    # Passwords: "password is Hunter2", "passcode: abc123", "pin is 1234"
+    (r'(?:password|passcode|passphrase|pin|secret|pwd)\s*(?:is|was|:|=)\s*(\S+)', "PASSWORD"),
+
+    # Alphanumeric strings (mix of letters AND digits, 4+ chars) — likely passwords/tokens
+    # Must contain at least one letter AND one digit to qualify
+    (r'\b(?=[A-Za-z]*\d)(?=\d*[A-Za-z])[A-Za-z\d!@#$%^&*]{4,}\b', "PASSWORD"),
+
     # Account/routing numbers (6-18 digit sequences) — keep last to avoid over-matching
     (r'\b\d{6,18}\b', "ACCOUNT_NUMBER"),
 ]
@@ -177,6 +184,27 @@ us_address_pattern = r'\b\d{1,5}\s+[A-Z][a-zA-Z\s]+(?:Street|St|Avenue|Ave|Drive
 for match in re.finditer(us_address_pattern, phrase_to_edit):
     add_sensitive("ADDRESS", match.group(0))
 
+# PO Box addresses: "PO Box 9948, Bellevue, WA"
+po_box_pattern = r'\bP\.?O\.?\s*Box\s+\d+(?:[,\s]+[A-Z][a-zA-Z\s]+)*(?:[,\s]+[A-Z]{2})?\b'
+for match in re.finditer(po_box_pattern, phrase_to_edit, re.IGNORECASE):
+    add_sensitive("ADDRESS", match.group(0).strip().rstrip(","))
+
+# Masked SSNs: "XXX-XX-4928", "***-**-1234"
+masked_ssn_pattern = r'[X*]{3}[-\s]?[X*]{2}[-\s]?\d{4}'
+for match in re.finditer(masked_ssn_pattern, phrase_to_edit, re.IGNORECASE):
+    add_sensitive("SSN", match.group(0))
+
+# Names with middle initials: "Jonathan H. Sterling", "Eleanor V. Sterling"
+middle_initial_name = r'\b([A-Z][a-z]{2,})\s+[A-Z]\.?\s+([A-Z][a-z]{2,})\b'
+for match in re.finditer(middle_initial_name, phrase_to_edit):
+    full = match.group(0)
+    add_sensitive("NAME", full)
+
+# Names after field labels: "Borrowers: Jonathan", "Client: John Smith", "Name: Jane"
+label_name_pattern = r'(?:Borrowers?|Clients?|Name|Tenant|Landlord|Applicant|Patient|Employee|Employer|Plaintiff|Defendant|Owner|Seller|Buyer|Lessee|Lessor|Guarantor|Insured|Beneficiary|Applicant|Recipient|Sender|Author|Contact)\s*:\s*([A-Z][a-z]+(?:\s+[A-Z]\.?\s*)?(?:\s+[A-Z][a-z]+)?(?:\s*(?:&|and)\s*[A-Z][a-z]+(?:\s+[A-Z]\.?\s*)?(?:\s+[A-Z][a-z]+)?)*)'
+for match in re.finditer(label_name_pattern, phrase_to_edit):
+    add_sensitive("NAME", match.group(1).strip())
+
 # General addresses: number + street name + (optional city)
 # Catches "54 Olmer road, Dublin", "14 Maple Street", etc.
 general_address_pattern = r'\b\d{1,5}\s+[A-Z][a-zA-Z]+\s+(?:Street|St|Avenue|Ave|Drive|Dr|Lane|Ln|Road|Rd|Terrace|Ter|Boulevard|Blvd|Way|Court|Ct|Circle|Cir|Place|Pl|Close|Crescent|Cres|Park|Gardens|Gdn|Square|Sq|Row|Walk|Hill|Mount|View|Green|Rise|Grove|Mews)(?:\b[,\s]+[A-Z][a-zA-Z\s]+)?'
@@ -188,6 +216,15 @@ for match in re.finditer(general_address_pattern, phrase_to_edit, re.IGNORECASE)
 company_pattern = r'\b([A-Z][A-Za-z&]+(?:\s+[A-Z][A-Za-z&]+){0,3})\s+(?i:Solicitors?|Attorneys|Law\s+Firm|LLP|LLC|Ltd|Limited|Inc|Incorporated|Corp|Corporation|Associates|Partners|Group|Holdings|Consulting|Services|Solutions|Agency|Bank|Insurance|Trust|Foundation)(?:\s+and\s+(?:Sons|Co|Associates|Partners|Family))?\.?\b'
 for match in re.finditer(company_pattern, phrase_to_edit):
     add_sensitive("COMPANY_NAME", match.group(0).strip())
+
+# CamelCase/PascalCase brand names: "MediMatch", "PayPal", "OpenAI", "HealthSync", etc.
+# Words with non-consecutive capitals are almost always brand/company names
+camelcase_pattern = r'\b[A-Z][a-z]+(?:[A-Z][a-z]*)+\b'
+for match in re.finditer(camelcase_pattern, phrase_to_edit):
+    word = match.group(0)
+    # Skip common English words that happen to look camelCase-ish
+    if word.lower() not in COMMON_WORDS:
+        add_sensitive("COMPANY_NAME", word)
 
 # Names after salutations: "Dear Advik", "My dearest Elara", "Respected Mr. Singh", etc.
 salutation_pattern = r'(?i:(?:My\s+)?(?:Dear|Dearest|Respected|Beloved|Hi|Hello|Hey|Attn|Attention))\s+(?:Mr\.?|Mrs\.?|Ms\.?|Dr\.?|Prof\.?|Sir|Madam|Miss)?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})'
