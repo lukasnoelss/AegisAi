@@ -217,7 +217,7 @@ const Index = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-foreground transition-colors hover:bg-accent focus:outline-none">
-                {currentModel === "gemini" ? "Gemini 1.5 Flash-8B" : "Claude 3.5 Sonnet"}
+                {currentModel === "gemini" ? "Gemini 2.5 Flash-Lite" : "Claude 3.5 Sonnet"}
                 <ChevronDown className="h-4 w-4 opacity-50" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[200px] bg-popover border-border">
