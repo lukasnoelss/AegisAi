@@ -50,6 +50,21 @@ regex_patterns = [
     # "credit card" or "debit card" followed by any number/identifier
     (r'(?:credit|debit)\s+card\s*(?:#|number|no\.?)?\s*:?\s*\S+', "CARD_INFO"),
 
+    # VAT numbers (EU/UK formats: GB 123 4567 89, IE1234567T, DE123456789, etc.)
+    (r'\bVAT\s*(?:No\.?|Number|#|Reg\.?)?\s*:?\s*[A-Z]{2}\s*\d[\d\s]{5,12}\w?\b', "VAT_NUMBER"),
+    (r'\b[A-Z]{2}\d{7,12}\w?\b', "VAT_NUMBER"),
+
+    # Postcodes / Zip codes
+    # UK postcodes (SW1A 1AA, EC2R 8AH, WC2A 1AP)
+    (r'\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b', "POSTCODE"),
+    # Irish Eircodes (D02 Y006, T12 AB34)
+    (r'\b[A-Z]\d{2}\s*[A-Z0-9]{4}\b', "POSTCODE"),
+    # US zip codes (handled by ACCOUNT_NUMBER already but explicit)
+    (r'\b\d{5}(?:-\d{4})?\b', "POSTCODE"),
+
+    # Country names
+    (r'\b(?:United Kingdom|United States|United Arab Emirates|Ireland|England|Scotland|Wales|Northern Ireland|France|Germany|Spain|Italy|Netherlands|Belgium|Switzerland|Austria|Portugal|Sweden|Norway|Denmark|Finland|Poland|Czech Republic|Hungary|Romania|Bulgaria|Greece|Turkey|Russia|China|Japan|South Korea|India|Pakistan|Bangladesh|Sri Lanka|Australia|New Zealand|Canada|Mexico|Brazil|Argentina|Colombia|South Africa|Nigeria|Kenya|Egypt|Saudi Arabia|Israel|Singapore|Malaysia|Indonesia|Philippines|Thailand|Vietnam)\b', "COUNTRY"),
+
     # Account/routing numbers (6-18 digit sequences) — keep last to avoid over-matching
     (r'\b\d{6,18}\b', "ACCOUNT_NUMBER"),
 ]
@@ -170,9 +185,35 @@ for match in re.finditer(general_address_pattern, phrase_to_edit, re.IGNORECASE)
 
 # Company/organization names with legal entity suffixes
 # Catches "JJ Solicitors", "AURION SYSTEMS INC.", "Acme Ltd", etc.
-company_pattern = r'\b([A-Za-z][A-Za-z&]+(?:\s+[A-Za-z][A-Za-z&]+){0,3})\s+(Solicitors?|Attorneys|Law\s+Firm|LLP|LLC|Ltd|Limited|Inc|Incorporated|Corp|Corporation|Associates|Partners|Group|Holdings|Consulting|Services|Solutions|Agency|Bank|Insurance|Trust|Foundation)\.?\b'
-for match in re.finditer(company_pattern, phrase_to_edit, re.IGNORECASE):
+company_pattern = r'\b([A-Z][A-Za-z&]+(?:\s+[A-Z][A-Za-z&]+){0,3})\s+(?i:Solicitors?|Attorneys|Law\s+Firm|LLP|LLC|Ltd|Limited|Inc|Incorporated|Corp|Corporation|Associates|Partners|Group|Holdings|Consulting|Services|Solutions|Agency|Bank|Insurance|Trust|Foundation)(?:\s+and\s+(?:Sons|Co|Associates|Partners|Family))?\.?\b'
+for match in re.finditer(company_pattern, phrase_to_edit):
     add_sensitive("COMPANY_NAME", match.group(0).strip())
+
+# Names after salutations: "Dear Advik", "My dearest Elara", "Respected Mr. Singh", etc.
+salutation_pattern = r'(?i:(?:My\s+)?(?:Dear|Dearest|Respected|Beloved|Hi|Hello|Hey|Attn|Attention))\s+(?:Mr\.?|Mrs\.?|Ms\.?|Dr\.?|Prof\.?|Sir|Madam|Miss)?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})'
+for match in re.finditer(salutation_pattern, phrase_to_edit):
+    name = match.group(1).strip()
+    if name.lower() not in COMMON_WORDS:
+        add_sensitive("NAME", name)
+
+# Signature block detection: everything after closing phrases
+# Catches "Sincerely, Advik Bahadur\nCEO, Aurion Systems"
+signature_closings = (
+    r'(?:Sincerely|Regards|Best\s+regards|Kind\s+regards|Warm\s+regards|'
+    r'Yours\s+(?:sincerely|faithfully|truly)|Best\s+wishes|'
+    r'Thank\s+you|Thanks|Respectfully|Cordially|Cheers|'
+    r'With\s+(?:thanks|appreciation|gratitude))'
+)
+sig_pattern = signature_closings + r'[,.]?\s*\n([\s\S]+)$'
+sig_match = re.search(sig_pattern, phrase_to_edit, re.IGNORECASE | re.MULTILINE)
+if sig_match:
+    sig_block = sig_match.group(1).strip()
+    if sig_block:
+        # Redact each non-empty line in the signature block
+        for line in sig_block.split('\n'):
+            line = line.strip()
+            if line and len(line) > 1:
+                add_sensitive("SIGNATURE", line)
 
 # ──────────────────────────────────────────────
 # PHASE 2: LLM-based extraction (names, addresses, companies)
@@ -379,34 +420,69 @@ COMPANY_SUFFIX_WORDS = {
     "foundation", "solicitors", "solicitor", "attorneys", "systems", "system",
     "technologies", "technology", "tech", "digital", "global", "international",
     "capital", "ventures", "labs", "studio", "studios", "media", "network",
-    "networks", "platform", "software", "data", "cloud", "ai", "sons", 
+    "networks", "platform", "software", "data", "cloud", "ai", "sons",
+    # Common English words / conjunctions / prepositions
+    "and", "the", "of", "for", "in", "on", "at", "to", "by", "with",
+    "our", "its", "his", "her", "not", "all", "new", "one", "two",
+    "first", "last", "best", "top", "pro", "big", "old", "real",
+    "family", "management", "enterprise", "united", "general", "national",
 }
 
 # Collect root words from company names for cascading replacement
 company_roots = {}  # maps root_word -> placeholder_key
+company_variants = []  # list of (variant_text, placeholder_key)
 for key, value in sensitive_info.items():
     if "COMPANY" in key:
-        # Extract individual words from the company name
         words = value.split()
         for word in words:
             clean = word.strip(".,;:!?\"'()").lower()
-            # Skip if it's a common suffix/generic word or too short
-            if clean in COMPANY_SUFFIX_WORDS or len(clean) < 3:
+            # Skip if it's a common suffix/generic word or single char
+            if clean in COMPANY_SUFFIX_WORDS or len(clean) < 2:
                 continue
-            # This is a meaningful root word (e.g. "Aurion" from "Aurion Systems Inc")
             company_roots[clean] = key
+        # Generate partial variants: "JJ Solicitors" from "JJ Solicitors and Sons"
+        # Strip trailing "and X" pattern
+        stripped = re.sub(r'\s+and\s+\w+$', '', value, flags=re.IGNORECASE).strip()
+        if stripped != value and len(stripped) > 2:
+            company_variants.append((stripped, key))
+
+# Helper: make whitespace-flexible regex from a literal string
+# "JJ Solicitors and Sons" -> r"JJ\s+Solicitors\s+and\s+Sons"
+def flex_ws_pattern(text):
+    return r'\s+'.join(re.escape(w) for w in text.split())
 
 # Sort by value length descending to replace longer matches first
 desensitized_output = phrase_to_edit
 for key, value in sorted(sensitive_info.items(), key=lambda x: len(x[1]), reverse=True):
-    desensitized_output = re.sub(re.escape(value), f"[{key}]", desensitized_output, flags=re.IGNORECASE)
+    # Use whitespace-flexible pattern so newlines/extra spaces don't break matching
+    pattern = flex_ws_pattern(value)
+    desensitized_output = re.sub(pattern, f"[{key}]", desensitized_output, flags=re.IGNORECASE)
+
+# Replace partial company variants (e.g. "JJ Solicitors" without "and Sons")
+for variant, placeholder_key in company_variants:
+    pattern = flex_ws_pattern(variant)
+    desensitized_output = re.sub(pattern, f"[{placeholder_key}]", desensitized_output, flags=re.IGNORECASE)
 
 # Cascading: replace any remaining standalone mentions of company root words
 for root_word, placeholder_key in company_roots.items():
-    # Use word boundary matching to catch standalone mentions like "Aurion"
-    # but not partial matches within other words
     pattern = r'\b' + re.escape(root_word) + r'\b'
     desensitized_output = re.sub(pattern, f"[{placeholder_key}]", desensitized_output, flags=re.IGNORECASE)
+
+# Cascading: replace any remaining standalone mentions of NAME words
+NAME_SKIP_WORDS = {"mr", "mrs", "ms", "dr", "prof", "sir", "madam", "miss", "the", "and", "of"}
+for key, value in sensitive_info.items():
+    if "NAME" in key and "COMPANY" not in key:
+        for word in value.split():
+            clean = word.strip(".,;:!?\"'()")
+            if len(clean) < 3 or clean.lower() in NAME_SKIP_WORDS:
+                continue
+            pattern = r'\b' + re.escape(clean) + r'\b'
+            desensitized_output = re.sub(pattern, f"[{key}]", desensitized_output, flags=re.IGNORECASE)
+
+# Final sweep: re-check all values one more time
+for key, value in sorted(sensitive_info.items(), key=lambda x: len(x[1]), reverse=True):
+    pattern = flex_ws_pattern(value)
+    desensitized_output = re.sub(pattern, f"[{key}]", desensitized_output, flags=re.IGNORECASE)
 
 output = {
     "sensitive_info": sensitive_info,
@@ -414,3 +490,4 @@ output = {
 }
 
 print(json.dumps(output, indent=2))
+
