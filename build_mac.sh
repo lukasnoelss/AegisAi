@@ -9,4 +9,9 @@ pip install -r requirements.txt
 echo "Building standalone Mac executable..."
 python -m PyInstaller --onefile --log-level=WARN --paths src/gemma --name AegisAI-Local server.py
 
-echo "Build complete! Check the 'dist' folder for 'AegisAI-Local'."
+echo "Zipping for distribution..."
+mkdir -p public/downloads
+zip -j public/downloads/AegisAI-Local-Mac.zip dist/AegisAI-Local
+
+echo "Build complete! Mac distribution zip is in 'public/downloads/AegisAI-Local-Mac.zip'."
+

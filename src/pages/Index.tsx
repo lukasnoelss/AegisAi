@@ -31,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const { user, logout } = useAuth();
@@ -277,41 +278,80 @@ const Index = () => {
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-4">
-                  <div className="flex gap-4 items-start">
-                    <div className="bg-primary/10 p-2 rounded-full mt-1">
-                      <FolderArchive className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
-                      <p className="text-sm text-muted-foreground mb-2">Download the Mac application zip file and double-click to extract it.</p>
-                      <a
-                        href="/downloads/AegisAI-Local.zip"
-                        download
-                        className="inline-flex items-center gap-2 rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        Download AegisAI-Local.zip
-                      </a>
-                    </div>
-                  </div>
+                  <Tabs defaultValue="mac" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                      <TabsTrigger value="mac">macOS</TabsTrigger>
+                      <TabsTrigger value="windows">Windows</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="mac" className="flex flex-col gap-4">
+                      <div className="flex gap-4 items-start">
+                        <div className="bg-primary/10 p-2 rounded-full mt-1">
+                          <FolderArchive className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
+                          <p className="text-sm text-muted-foreground mb-2">Download the Mac application zip file and double-click to extract it.</p>
+                          <a
+                            href="/downloads/AegisAI-Local-Mac.zip"
+                            download
+                            className="inline-flex items-center gap-2 rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            Download for Mac (.zip)
+                          </a>
+                        </div>
+                      </div>
 
-                  <div className="flex gap-4 items-start">
-                    <div className="bg-primary/10 p-2 rounded-full mt-1">
-                      <TerminalSquare className="h-4 w-4 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-semibold mb-1 text-foreground">2. Bypass Apple Security</h4>
-                      <p className="text-sm text-muted-foreground">Because this is an indie developer app, Apple will flag it. To run it: <strong>Right-Click (or Control-Click)</strong> the extracted <code>AegisAI-Local</code> file and select <strong>Open</strong> from the menu.</p>
-                    </div>
-                  </div>
+                      <div className="flex gap-4 items-start">
+                        <div className="bg-primary/10 p-2 rounded-full mt-1">
+                          <TerminalSquare className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">2. Bypass Apple Security</h4>
+                          <p className="text-sm text-muted-foreground">Because this is an indie developer app, Apple will flag it. To run it: <strong>Right-Click (or Control-Click)</strong> the extracted <code>AegisAI-Local</code> file and select <strong>Open</strong> from the menu.</p>
+                        </div>
+                      </div>
+                    </TabsContent>
 
-                  <div className="flex gap-4 items-start">
+                    <TabsContent value="windows" className="flex flex-col gap-4">
+                      <div className="flex gap-4 items-start">
+                        <div className="bg-primary/10 p-2 rounded-full mt-1">
+                          <FolderArchive className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download</h4>
+                          <p className="text-sm text-muted-foreground mb-2">Download the Windows executable directly.</p>
+                          <a
+                            href="/downloads/AegisAI-Local-Windows.exe"
+                            download
+                            className="inline-flex items-center gap-2 rounded-md bg-blue-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-600"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            Download for Windows (.exe)
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 items-start">
+                        <div className="bg-primary/10 p-2 rounded-full mt-1">
+                          <ShieldCheck className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">2. Run & Allow Access</h4>
+                          <p className="text-sm text-muted-foreground">Windows Defender might warn you about an unknown publisher. Click <strong>"More Info"</strong> and then <strong>"Run Anyway"</strong>. When prompted by the firewall, click <strong>Allow Access</strong>.</p>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+
+                  <div className="flex gap-4 items-start pt-2 border-t border-border">
                     <div className="bg-primary/10 p-2 rounded-full mt-1">
                       <MonitorPlay className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-1 text-foreground">3. Leave it running</h4>
-                      <p className="text-sm text-muted-foreground">A small terminal window will open saying the server is running. Leave it open in the background while you chat!</p>
+                      <h4 className="text-sm font-semibold mb-1 text-foreground">3. Final Step</h4>
+                      <p className="text-sm text-muted-foreground">A terminal window will open saying the server is running. Leave it open in the background while you chat!</p>
                     </div>
                   </div>
                 </div>
