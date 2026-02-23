@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "server": "node server/index.js"
+    "server": "python3 server.py"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

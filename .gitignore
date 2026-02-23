@@ -11,7 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+# Python and PyInstaller
 .venv
+venv/
+build/
+*.spec
 
 # Editor directories and files
 .vscode/*

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Menu, LogOut, Check, ChevronDown, Shield, ShieldCheck, Lock } from "lucide-react";
+import { Menu, LogOut, Check, ChevronDown, Shield, ShieldCheck, Lock, Download, MonitorPlay, FolderArchive, TerminalSquare } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import Sidebar from "@/components/chat/Sidebar";
 import ChatMessage from "@/components/chat/ChatMessage";
@@ -23,6 +23,14 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const Index = () => {
   const { user, logout } = useAuth();
@@ -247,6 +255,68 @@ const Index = () => {
 
           <div className="flex items-center gap-2">
             {/* Privacy toggle hidden — privacy is always on */}
+
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium bg-emerald-500/10 text-emerald-600 transition-colors hover:bg-emerald-500/20 active:scale-95"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Download Local Server</span>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md bg-popover border-border">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-xl">
+                    <Shield className="h-5 w-5 text-emerald-500" />
+                    Setup Local Privacy Shield
+                  </DialogTitle>
+                  <DialogDescription className="pt-2 text-muted-foreground">
+                    To keep your data 100% private, this web app routes all sensitive information through a local server on your own computer.
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="flex flex-col gap-4 py-4">
+                  <div className="flex gap-4 items-start">
+                    <div className="bg-primary/10 p-2 rounded-full mt-1">
+                      <FolderArchive className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
+                      <p className="text-sm text-muted-foreground mb-2">Download the Mac application zip file and double-click to extract it.</p>
+                      <a
+                        href="/downloads/AegisAI-Local.zip"
+                        download
+                        className="inline-flex items-center gap-2 rounded-md bg-emerald-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                        Download AegisAI-Local.zip
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 items-start">
+                    <div className="bg-primary/10 p-2 rounded-full mt-1">
+                      <TerminalSquare className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold mb-1 text-foreground">2. Bypass Apple Security</h4>
+                      <p className="text-sm text-muted-foreground">Because this is an indie developer app, Apple will flag it. To run it: <strong>Right-Click (or Control-Click)</strong> the extracted <code>AegisAI-Local</code> file and select <strong>Open</strong> from the menu.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4 items-start">
+                    <div className="bg-primary/10 p-2 rounded-full mt-1">
+                      <MonitorPlay className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-semibold mb-1 text-foreground">3. Leave it running</h4>
+                      <p className="text-sm text-muted-foreground">A small terminal window will open saying the server is running. Leave it open in the background while you chat!</p>
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
 
             <button
               onClick={logout}
