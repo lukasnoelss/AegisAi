@@ -1,0 +1,42 @@
+# AegisAI Windows Build Guide
+
+To create the Windows version of the local privacy server, follow these steps on a Windows machine.
+
+## Prerequisites
+1. **Python 3.10+**: Make sure Python is installed and added to your `PATH`.
+2. **Project Files**: Clone the repository to your Windows machine.
+
+## Build Steps
+
+### Option A: The Easy Way (Batch Script)
+1. Navigate to the project root folder.
+2. Double-click the [build_windows.bat](file:///Users/lukasnoel/Documents/GitHub/chatty-front/build_windows.bat) file.
+3. Wait for the process to finish. The `.exe` will be in the `dist/` folder.
+
+### Option B: Manual Steps (Command Line)
+If you prefer running commands manually in PowerShell or CMD:
+
+1. **Create and activate a virtual environment**:
+   ```powershell
+   python -m venv venv
+   .\venv\Scripts\activate
+   ```
+
+2. **Install dependencies**:
+   ```powershell
+   pip install -r requirements.txt
+   ```
+
+3. **Run PyInstaller**:
+   ```powershell
+   python -m PyInstaller --onefile --paths src/gemma --name AegisAI-Local server.py
+   ```
+
+## Verification
+1. Go to the `dist/` folder.
+2. Run `AegisAI-Local.exe`.
+3. You should see a terminal window pop up: `AegisAI Local Server running on http://localhost:3001`.
+4. The Windows security firewall might ask for permission; click **Allow Access**.
+
+## Deployment
+Once built, rename the file to `AegisAI-Local-Windows.exe` and you can distribute it to Windows users. They will not need Python installed to run it.
