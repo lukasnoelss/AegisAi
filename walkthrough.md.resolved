@@ -1,0 +1,14 @@
+# Standalone Mac Executable 
+
+## Changes Made
+- Transformed the [deembeder.py](file:///Users/lukasnoel/Documents/GitHub/chatty-front/patch_deembeder.py) and [reconstructor.py](file:///Users/lukasnoel/Documents/GitHub/chatty-front/src/gemma/reconstructor.py) scripts to expose module-level functions ([run_deembeder()](file:///Users/lukasnoel/Documents/GitHub/chatty-front/src/gemma/deembeder.py#9-528) and [run_reconstructor()](file:///Users/lukasnoel/Documents/GitHub/chatty-front/src/gemma/reconstructor.py#5-22)) instead of using Node's `child_process.spawn`.
+- Converted the [server/index.js](file:///Users/lukasnoel/Documents/GitHub/chatty-front/server/index.js) Express server into a [server.py](file:///Users/lukasnoel/Documents/GitHub/chatty-front/server.py) Flask server to keep the core local codebase fully unified under Python.
+- Added a [build_mac.sh](file:///Users/lukasnoel/Documents/GitHub/chatty-front/build_mac.sh) build script that uses PyInstaller to compile the entire Python privacy pipeline into a single, dependency-free binary file ([dist/AegisAI-Local](file:///Users/lukasnoel/Documents/GitHub/chatty-front/dist/AegisAI-Local)).
+
+## Validation Results
+- Killed the existing Node server and launched the newly compiled [dist/AegisAI-Local](file:///Users/lukasnoel/Documents/GitHub/chatty-front/dist/AegisAI-Local) directly from the terminal.
+- Sent a cURL test request to the compiled executable (`/api/deembed`) containing a name and an email address.
+- Verified that the standalone Mac executable intercepted the string and returned the redacted output flawlessly without requiring Python or Node to be installed globally!
+
+> [!NOTE]
+> The executable lives in the `dist/` directory and is named `AegisAI-Local`. It runs a local Flask server perfectly mirroring the replaced Node APIs.

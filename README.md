@@ -73,7 +73,7 @@ Aegis AI is a privacy-first chat application that **de-identifies sensitive info
 | UI Components | shadcn/ui, Tailwind CSS, Framer Motion |
 | Markdown | react-markdown |
 | Auth & Database | Firebase (Auth + Firestore) |
-| Privacy Pipeline | Node.js Express server (port 3001) |
+| Privacy Pipeline | Python Flask server (port 3001) |
 | Local LLM | Ollama — Gemma3 240M (runs entirely on-device) |
 | Cloud LLMs | Google Gemini (`gemini-2.5-flash`), Anthropic Claude |
 
@@ -140,12 +140,31 @@ npm run dev
 
 The app will be available at `http://localhost:8080`.
 
+### Standalone Executable (Distribution)
+
+If you want to build a single standalone binary that doesn't require a Python/Node environment:
+
+```sh
+# For macOS:
+npm run build:mac
+
+# For Windows:
+npm run build:windows
+
+# For Linux:
+npm run build:linux
+```
+
+The output will be placed in `dist/` and copied to `public/downloads/` for web-based distribution.
+
 ## Project Structure
 
 ```
 chatty-front/
-├── server/
-│   └── index.js              # Express server — routes /deembed and /reconstruct
+├── server.py                 # Flask server — routes /api/deembed and /api/reconstruct
+├── build_mac.sh              # Build script for standalone Mac binary
+├── build_windows.ps1         # Build script for standalone Windows binary
+├── build_linux.sh            # Build script for standalone Linux binary
 ├── src/
 │   ├── components/
 │   │   └── chat/

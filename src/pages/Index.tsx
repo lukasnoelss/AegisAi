@@ -279,11 +279,12 @@ const Index = () => {
 
                 <div className="flex flex-col gap-4 py-4">
                   <Tabs defaultValue="mac" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 mb-4">
+                    <TabsList className="grid w-full grid-cols-3 mb-4">
                       <TabsTrigger value="mac">macOS</TabsTrigger>
                       <TabsTrigger value="windows">Windows</TabsTrigger>
+                      <TabsTrigger value="linux">Linux</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="mac" className="flex flex-col gap-4">
                       <div className="flex gap-4 items-start">
                         <div className="bg-primary/10 p-2 rounded-full mt-1">
@@ -340,6 +341,36 @@ const Index = () => {
                         <div>
                           <h4 className="text-sm font-semibold mb-1 text-foreground">2. Run & Allow Access</h4>
                           <p className="text-sm text-muted-foreground">Windows Defender might warn you about an unknown publisher. Click <strong>"More Info"</strong> and then <strong>"Run Anyway"</strong>. When prompted by the firewall, click <strong>Allow Access</strong>.</p>
+                        </div>
+                      </div>
+                    </TabsContent>
+
+                    <TabsContent value="linux" className="flex flex-col gap-4">
+                      <div className="flex gap-4 items-start">
+                        <div className="bg-primary/10 p-2 rounded-full mt-1">
+                          <FolderArchive className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
+                          <p className="text-sm text-muted-foreground mb-2">Download the Linux archive file and extract it.</p>
+                          <a
+                            href="/downloads/AegisAI-Local-Linux.tar.gz"
+                            download
+                            className="inline-flex items-center gap-2 rounded-md bg-purple-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-purple-600"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                            Download for Linux (.tar.gz)
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 items-start">
+                        <div className="bg-primary/10 p-2 rounded-full mt-1">
+                          <TerminalSquare className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">2. Execute via Terminal</h4>
+                          <p className="text-sm text-muted-foreground">Open a terminal in the extracted folder. Run <code>chmod +x AegisAI-Local</code> to make it executable, then start it with <code>./AegisAI-Local</code>.</p>
                         </div>
                       </div>
                     </TabsContent>
