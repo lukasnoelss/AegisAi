@@ -150,10 +150,12 @@ npm run build:mac
 
 # For Windows:
 npm run build:windows
+
+# For Linux:
+npm run build:linux
 ```
 
 The output will be placed in `dist/` and copied to `public/downloads/` for web-based distribution.
-
 
 ## Project Structure
 
@@ -162,6 +164,7 @@ chatty-front/
 ├── server.py                 # Flask server — routes /api/deembed and /api/reconstruct
 ├── build_mac.sh              # Build script for standalone Mac binary
 ├── build_windows.ps1         # Build script for standalone Windows binary
+├── build_linux.sh            # Build script for standalone Linux binary
 ├── src/
 │   ├── components/
 │   │   └── chat/

@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "server": "python3 server.py",
     "build:mac": "bash build_mac.sh",
-    "build:windows": "powershell -ExecutionPolicy Bypass -File build_windows.ps1"
+    "build:windows": "powershell -ExecutionPolicy Bypass -File build_windows.ps1",
+    "build:linux": "bash build_linux.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
