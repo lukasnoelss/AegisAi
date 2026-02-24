@@ -6,9 +6,11 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
+import { AlertCircle, LogOut } from "lucide-react";
+import { Button } from "./components/ui/button";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isWhitelisted, logout } = useAuth();
 
   if (loading) {
     return (
@@ -22,11 +24,32 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" />;
   }
 
-  return <>{children}</>;
+  if (isWhitelisted === false) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center bg-background p-6 text-center">
+        <div className="mb-6 rounded-full bg-destructive/10 p-4">
+          <AlertCircle className="h-10 w-10 text-destructive" />
+        </div>
+        <h1 className="mb-2 text-2xl font-bold text-foreground">Access Restricted</h1>
+        <p className="mb-8 max-w-md text-muted-foreground">
+          Your email (<strong>{user.email}</strong>) is not on the authorized list. 
+          Please contact an administrator to request access.
+        </p>
+        <Button variant="outline" onClick={logout} className="gap-2">
+          <LogOut className="h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
+    );
+  }
+
+  // Only allow children if both logged in AND whitelisted
+  return isWhitelisted ? <>{children}</> : null;
 };
 
 const App = () => (
   <TooltipProvider>
+    <Toaster />
     <Toaster />
     <Sonner />
     <BrowserRouter>

@@ -5,15 +5,32 @@ import {
   signOut, 
   User 
 } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, googleProvider, db } from "@/lib/firebase";
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isWhitelisted, setIsWhitelisted] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      
+      if (firebaseUser?.email) {
+        // Only allow specific emails
+        const whitelistDoc = await getDoc(doc(db, "whitelist", firebaseUser.email.toLowerCase()));
+        if (whitelistDoc.exists() && whitelistDoc.data().allowed === true) {
+          setIsWhitelisted(true);
+        } else {
+          setIsWhitelisted(false);
+          // Auto-logout if not whitelisted to keep state clean, 
+          // but we'll handle the UI blocking in ProtectedRoute
+        }
+      } else {
+        setIsWhitelisted(null);
+      }
+      
       setLoading(false);
     });
 
@@ -37,5 +54,5 @@ export const useAuth = () => {
     }
   };
 
-  return { user, loading, loginWithGoogle, logout };
+  return { user, loading, isWhitelisted, loginWithGoogle, logout };
 };
