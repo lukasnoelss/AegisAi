@@ -1,3 +1,12 @@
+Metadata-Version: 2.4
+Name: aegis-local
+Version: 0.1.0
+Summary: Local privacy protection and model server
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: Flask>=2.0.0
+Requires-Dist: Flask-Cors>=3.0.0
+
 # Aegis AI — Privacy-First Chat Interface
 
 Aegis AI is a privacy-first chat application that **de-identifies sensitive information** before sending prompts to cloud-based LLMs (Gemini / Claude), then **reconstructs** the original data into the response — ensuring PII never leaves your device.
@@ -106,11 +115,8 @@ The deembeder uses a **two-layer approach**: regex for structured/patterned PII,
 git clone https://github.com/lukasnoelss/chatty-front.git
 cd chatty-front
 
-# Install frontend dependencies
+# Install dependencies
 npm install
-
-# Install local Python backend package
-pip install -e .
 
 # Pull the Ollama model
 ollama pull gemma3:270m

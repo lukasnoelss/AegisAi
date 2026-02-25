@@ -291,8 +291,8 @@ const Index = () => {
                           <FolderArchive className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
-                          <p className="text-sm text-muted-foreground mb-2">Download the Mac application zip file and double-click to extract it.</p>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Install Server</h4>
+                          <p className="text-sm text-muted-foreground mb-2"><strong>Developer</strong>: <code>pip install aegis-local</code> & run <code>aegis-server</code>.<br /><strong>Standard</strong>: Download the Mac zip and extract.</p>
                           <a
                             href="/downloads/AegisAI-Local-Mac.zip"
                             download
@@ -321,8 +321,8 @@ const Index = () => {
                           <FolderArchive className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download</h4>
-                          <p className="text-sm text-muted-foreground mb-2">Download the Windows executable directly.</p>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Install Server</h4>
+                          <p className="text-sm text-muted-foreground mb-2"><strong>Developer</strong>: <code>pip install aegis-local</code> & run <code>aegis-server</code>.<br /><strong>Standard</strong>: Download the Windows executable.</p>
                           <a
                             href="/downloads/AegisAI-Local-Windows.exe"
                             download
@@ -351,8 +351,8 @@ const Index = () => {
                           <FolderArchive className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
-                          <p className="text-sm text-muted-foreground mb-2">Download the Linux archive file and extract it.</p>
+                          <h4 className="text-sm font-semibold mb-1 text-foreground">1. Install Server</h4>
+                          <p className="text-sm text-muted-foreground mb-2"><strong>Developer</strong>: <code>pip install aegis-local</code> & run <code>aegis-server</code>.<br /><strong>Standard</strong>: Download the Linux archive.</p>
                           <a
                             href="/downloads/AegisAI-Local-Linux.tar.gz"
                             download

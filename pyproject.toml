@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aegis-local"
+version = "0.1.0"
+description = "Local privacy protection and model server"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "Flask>=2.0.0",
+    "Flask-Cors>=3.0.0",
+]
+
+[project.scripts]
+aegis-server = "aegis_local.server:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aegis_local*"]

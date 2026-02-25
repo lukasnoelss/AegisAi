@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+aegis_local/__init__.py
+aegis_local/server.py
+aegis_local.egg-info/PKG-INFO
+aegis_local.egg-info/SOURCES.txt
+aegis_local.egg-info/dependency_links.txt
+aegis_local.egg-info/entry_points.txt
+aegis_local.egg-info/requires.txt
+aegis_local.egg-info/top_level.txt
+aegis_local/gemma/__init__.py
+aegis_local/gemma/deembeder.py
+aegis_local/gemma/reconstructor.py

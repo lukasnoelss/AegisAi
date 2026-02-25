@@ -1,0 +1,6 @@
+components
+hooks
+lib
+pages
+test
+types
