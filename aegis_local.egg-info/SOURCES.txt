@@ -1,5 +1,6 @@
 README.md
 pyproject.toml
+setup.py
 aegis_local/__init__.py
 aegis_local/server.py
 aegis_local.egg-info/PKG-INFO
