@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
+import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "./hooks/useAuth";
 import { AlertCircle, LogOut } from "lucide-react";
@@ -54,8 +55,9 @@ const App = () => (
     <Sonner />
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route
-          path="/"
+          path="/chat"
           element={
             <ProtectedRoute>
               <Index />
