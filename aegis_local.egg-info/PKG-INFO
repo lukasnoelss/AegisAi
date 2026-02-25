@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: aegis-local
-Version: 0.1.1
+Version: 0.1.2
 Summary: Local privacy protection and model server
 Requires-Python: >=3.8
 Description-Content-Type: text/markdown
@@ -40,7 +40,6 @@ If you do not have Python installed or prefer not to use the terminal, download 
 
 Once the local privacy server is running (`aegis-server`), open the Aegis AI web interface. The interface will automatically connect to your local server on port 3001, enabling the Privacy Shield for all your conversations.
 
-The web app is accessible at: `https://chatty-aegis.com` *(example URL)*
 
 ## How It Works (High Level)
 
