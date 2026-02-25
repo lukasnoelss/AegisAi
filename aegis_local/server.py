@@ -3,10 +3,8 @@ from flask_cors import CORS
 import sys
 import os
 
-# Ensure the app can find the gemma modules if bundled
-sys.path.append(os.path.join(os.path.dirname(__file__), "src", "gemma"))
-from deembeder import run_deembeder
-from reconstructor import run_reconstructor
+from .gemma.deembeder import run_deembeder
+from .gemma.reconstructor import run_reconstructor
 
 app = Flask(__name__)
 CORS(app)
@@ -41,7 +39,10 @@ def reconstruct():
 def health():
     return jsonify({"status": "ok"})
 
-if __name__ == "__main__":
+def main():
     port = int(os.environ.get("PORT", 3001))
     print(f"AegisAI Local Server running on http://localhost:{port}")
     app.run(host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    main()

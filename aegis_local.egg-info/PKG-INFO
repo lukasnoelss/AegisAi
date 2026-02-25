@@ -1,3 +1,10 @@
+Metadata-Version: 2.1
+Name: aegis-local
+Version: 0.1.2
+Summary: Local privacy protection and model server
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+
 # Aegis AI — Privacy-First Chat Interface
 
 Aegis AI is a privacy-first chat application that **de-identifies sensitive information** before sending prompts to cloud-based LLMs (like Gemini or Claude), then **reconstructs** the original data into the response — ensuring your Personally Identifiable Information (PII) never leaves your device.

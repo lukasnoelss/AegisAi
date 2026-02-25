@@ -13,7 +13,7 @@ Write-Host "Installing dependencies..." -ForegroundColor Cyan
 pip install -r requirements.txt
 
 Write-Host "Building standalone Windows executable (.exe)..." -ForegroundColor Cyan
-python -m PyInstaller --onefile --log-level=WARN --paths src/gemma --name AegisAI-Local server.py
+python -m PyInstaller --onefile --log-level=WARN --paths aegis_local/gemma --name AegisAI-Local aegis_local/server.py
 
 Write-Host "Copying to public/downloads for web distribution..." -ForegroundColor Cyan
 New-Item -ItemType Directory -Force -Path public/downloads | Out-Null

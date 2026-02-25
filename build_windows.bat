@@ -16,7 +16,7 @@ echo Building standalone Windows executable (.exe)...
 :: --onefile: bundle everything into a single exe
 :: --paths: ensure PyInstaller can find your local modules
 :: --name: naming the output
-python -m PyInstaller --onefile --log-level=WARN --paths src/gemma --name AegisAI-Local server.py
+python -m PyInstaller --onefile --log-level=WARN --paths aegis_local\gemma --name AegisAI-Local aegis_local\server.py
 
 echo Copying to public/downloads for web distribution...
 if not exist public\downloads mkdir public\downloads

@@ -266,7 +266,7 @@ const Index = () => {
                   <span className="hidden sm:inline">Download Local Server</span>
                 </button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-md bg-popover border-border">
+              <DialogContent className="sm:max-w-[50vw] bg-popover border-border">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-xl">
                     <Shield className="h-5 w-5 text-emerald-500" />
@@ -278,6 +278,25 @@ const Index = () => {
                 </DialogHeader>
 
                 <div className="flex flex-col gap-4 py-4">
+                  {/* Option 1: Python/Pip install */}
+                  <div className="flex flex-col gap-2 p-3 bg-secondary/30 rounded-lg border border-border">
+                    <h4 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+                      <TerminalSquare className="h-4 w-4 text-emerald-500" />
+                      Option 1: Python Installation (Recommended)
+                    </h4>
+                    <p className="text-xs text-muted-foreground">If you have Python installed, open your terminal and run:</p>
+                    <div className="bg-background text-xs p-2.5 rounded border border-border font-mono text-emerald-500 shadow-inner">
+                      pip install aegis-local<br />
+                      aegis-server
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground my-2">
+                    <div className="h-px bg-border flex-1"></div>
+                    <span className="font-medium tracking-wide">OR STANDALONE BINARY</span>
+                    <div className="h-px bg-border flex-1"></div>
+                  </div>
+
                   <Tabs defaultValue="mac" className="w-full">
                     <TabsList className="grid w-full grid-cols-3 mb-4">
                       <TabsTrigger value="mac">macOS</TabsTrigger>
@@ -292,7 +311,7 @@ const Index = () => {
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
-                          <p className="text-sm text-muted-foreground mb-2">Download the Mac application zip file and double-click to extract it.</p>
+                          <p className="text-sm text-muted-foreground mb-2">Download the Mac zip and extract it to your preferred location.</p>
                           <a
                             href="/downloads/AegisAI-Local-Mac.zip"
                             download
@@ -306,7 +325,7 @@ const Index = () => {
 
                       <div className="flex gap-4 items-start">
                         <div className="bg-primary/10 p-2 rounded-full mt-1">
-                          <TerminalSquare className="h-4 w-4 text-primary" />
+                          <ShieldCheck className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold mb-1 text-foreground">2. Bypass Apple Security</h4>
@@ -322,7 +341,7 @@ const Index = () => {
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download</h4>
-                          <p className="text-sm text-muted-foreground mb-2">Download the Windows executable directly.</p>
+                          <p className="text-sm text-muted-foreground mb-2">Download the Windows executable.</p>
                           <a
                             href="/downloads/AegisAI-Local-Windows.exe"
                             download
@@ -352,7 +371,7 @@ const Index = () => {
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold mb-1 text-foreground">1. Download & Extract</h4>
-                          <p className="text-sm text-muted-foreground mb-2">Download the Linux archive file and extract it.</p>
+                          <p className="text-sm text-muted-foreground mb-2">Download the Linux archive file.</p>
                           <a
                             href="/downloads/AegisAI-Local-Linux.tar.gz"
                             download
@@ -376,12 +395,12 @@ const Index = () => {
                     </TabsContent>
                   </Tabs>
 
-                  <div className="flex gap-4 items-start pt-2 border-t border-border">
+                  <div className="flex gap-4 items-start pt-2 border-t border-border mt-2">
                     <div className="bg-primary/10 p-2 rounded-full mt-1">
                       <MonitorPlay className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-semibold mb-1 text-foreground">3. Final Step</h4>
+                      <h4 className="text-sm font-semibold mb-1 text-foreground">Final Step</h4>
                       <p className="text-sm text-muted-foreground">A terminal window will open saying the server is running. Leave it open in the background while you chat!</p>
                     </div>
                   </div>

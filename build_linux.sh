@@ -7,7 +7,7 @@ echo "Installing dependencies..."
 pip install -r requirements.txt
 
 echo "Building standalone Linux executable..."
-python -m PyInstaller --onefile --log-level=WARN --paths src/gemma --name AegisAI-Local server.py
+python -m PyInstaller --onefile --log-level=WARN --paths aegis_local/gemma --name AegisAI-Local aegis_local/server.py
 
 echo "Bundling for distribution..."
 mkdir -p public/downloads

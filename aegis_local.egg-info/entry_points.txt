@@ -1,0 +1,2 @@
+[console_scripts]
+aegis-server = aegis_local.server:main

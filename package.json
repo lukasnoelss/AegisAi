@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "server": "python3 server.py",
+    "server": "aegis-server",
     "build:mac": "bash build_mac.sh",
     "build:windows": "powershell -ExecutionPolicy Bypass -File build_windows.ps1",
     "build:linux": "bash build_linux.sh"
